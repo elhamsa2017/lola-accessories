@@ -21,9 +21,9 @@
 
 			<form id="loginForm" class="login-form">
 				<label class="login-field">
-					<i class="fa-regular fa-envelope" aria-hidden="true"></i>
-					<span class="sr-only">Email Address</span>
-					<input type="email" id="loginEmail" placeholder="Email Address" autocomplete="email" required>
+					<i class="fa-regular fa-user" aria-hidden="true"></i>
+					<span class="sr-only">Email or phone number</span>
+					<input type="text" id="loginIdentifier" placeholder="Email or phone number" autocomplete="username" required>
 				</label>
 
 				<label class="login-field">
@@ -52,11 +52,11 @@
 		const loginForm = document.getElementById('loginForm');
 		const loginMessage = document.getElementById('loginMessage');
 		const rememberMe = document.getElementById('rememberMe');
-		const loginEmail = document.getElementById('loginEmail');
+		const loginIdentifier = document.getElementById('loginIdentifier');
 
 		const savedEmail = localStorage.getItem('lola-remembered-email');
 		if (savedEmail) {
-			loginEmail.value = savedEmail;
+			loginIdentifier.value = savedEmail;
 			rememberMe.checked = true;
 		}
 
@@ -67,8 +67,21 @@
 				return;
 			}
 
+			const account = JSON.parse(localStorage.getItem('lola-account') || 'null');
+			const identifier = loginIdentifier.value.trim();
+			const normalizedIdentifier = identifier.replace(/\s/g, '');
+			const matchesIdentifier = account && (
+				account.email?.toLowerCase() === identifier.toLowerCase() ||
+				account.phone === normalizedIdentifier
+			);
+			if (!matchesIdentifier || account.password !== document.getElementById('loginPassword').value) {
+				loginMessage.textContent = 'Incorrect email/phone or password';
+				loginMessage.classList.add('visible');
+				return;
+			}
+
 			if (rememberMe.checked) {
-				localStorage.setItem('lola-remembered-email', loginEmail.value);
+				localStorage.setItem('lola-remembered-email', identifier);
 			} else {
 				localStorage.removeItem('lola-remembered-email');
 			}

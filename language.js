@@ -135,6 +135,9 @@
         , 'تم تسجيل الدخول بنجاح': 'Signed in successfully'
         , 'كلمتا المرور غير متطابقتين': 'Passwords do not match'
         , 'تسجيل الدخول للمتابعة': 'Sign in to continue'
+        , 'البريد الإلكتروني أو رقم الهاتف': 'Email or phone number'
+        , 'أدخل بريدًا إلكترونيًا أو رقم هاتف صحيحًا': 'Enter a valid email address or phone number'
+        , 'البريد الإلكتروني أو الهاتف أو كلمة المرور غير صحيحة': 'Incorrect email/phone or password'
     };
     const reverseTranslations = Object.fromEntries(Object.entries(translations).map(([arabic, english]) => [english, arabic]));
 

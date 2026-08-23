@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-guard.js"></script>
+    <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
+    <script src="language.js"></script>
+    <title>العملاء | Lola Accessories and Necklaces</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <section id="header">
+        <a href="index.html"><img src="img/logo1.jpg" class="logo" alt="logo"></a>
+        <div><ul id="navbar">
+            <li><a href="index.html">الرئيسية</a></li>
+            <li><a href="shop.html">المتجر</a></li>
+            <li><a href="about.html">من نحن</a></li>
+            <li><a href="contact.html">تواصل معنا</a></li>
+            <li><a class="active" href="admin.html">الإدارة</a></li>
+            <li><a href="cart.html"><i class="fa-solid fa-cart-shopping"></i></a></li>
+        </ul></div>
+    </section>
+    <main class="admin-dashboard">
+        <div class="admin-header">
+            <div><p class="admin-kicker">الإدارة</p><h1>العملاء</h1></div>
+            <div class="admin-actions"><a href="admin.html" class="normal admin-btn small-btn">العودة للوحة التحكم</a></div>
+        </div>
+        <section class="admin-grid customer-summary-grid">
+            <div class="admin-card"><span>إجمالي العملاء</span><h3 id="customersCount">0</h3><small>حسابات مسجلة</small></div>
+            <div class="admin-card"><span>عملاء البريد</span><h3 id="emailCustomersCount">0</h3><small>يمكنهم استعادة كلمة المرور</small></div>
+            <div class="admin-card"><span>عملاء الهاتف</span><h3 id="phoneCustomersCount">0</h3><small>تسجيل برقم الهاتف</small></div>
+        </section>
+        <section class="admin-panel full-width-panel">
+            <div class="panel-title"><h3>بيانات العملاء</h3><a href="#" id="refreshCustomersBtn">تحديث</a></div>
+            <div class="customers-table-wrap"><table class="admin-table customers-table"><thead><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>رقم الهاتف</th><th>تاريخ التسجيل</th><th>الطلبات</th></tr></thead><tbody id="customersTableBody"></tbody></table></div>
+            <p id="customersEmpty" class="customers-empty hidden">لا توجد حسابات مسجلة حتى الآن.</p>
+        </section>
+    </main>
+    <script>
+        const CUSTOMER_KEY = 'lola-customers';
+        const ORDERS_KEY = 'lola-accessories-orders';
+        function readList(key) {
+            try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; } catch { return []; }
+        }
+        function formatCustomerDate(date) {
+            if (!date) return 'غير متوفر';
+            const parsed = new Date(date);
+            return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString();
+        }
+        function renderCustomers() {
+            const customers = readList(CUSTOMER_KEY);
+            const legacyAccount = JSON.parse(localStorage.getItem('lola-account') || 'null');
+            if (!customers.length && legacyAccount) customers.push(legacyAccount);
+            const orders = readList(ORDERS_KEY);
+            document.getElementById('customersCount').textContent = customers.length;
+            document.getElementById('emailCustomersCount').textContent = customers.filter(customer => customer.email).length;
+            document.getElementById('phoneCustomersCount').textContent = customers.filter(customer => customer.phone).length;
+            document.getElementById('customersEmpty').classList.toggle('hidden', customers.length > 0);
+            document.getElementById('customersTableBody').innerHTML = customers.map(customer => {
+                const customerOrders = orders.filter(order => (customer.email && order.email === customer.email) || (customer.phone && order.phone === customer.phone) || order.customer === customer.name).length;
+                return `<tr><td><strong>${customer.name || 'غير متوفر'}</strong></td><td>${customer.email || 'غير مضاف'}</td><td>${customer.phone || 'غير مضاف'}</td><td>${formatCustomerDate(customer.createdAt)}</td><td>${customerOrders}</td></tr>`;
+            }).join('');
+            window.translatePage?.(localStorage.getItem('lola-language') || 'ar');
+        }
+        document.getElementById('refreshCustomersBtn').addEventListener('click', event => { event.preventDefault(); renderCustomers(); });
+        renderCustomers();
+    </script>
+</body>
+</html>

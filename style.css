@@ -1031,6 +1031,46 @@ footer .follow .icons i{
     color: #172b2a;
 }
 
+.password-reset-panel {
+    margin-top: 20px;
+    padding: 22px;
+    border: 1px solid #d8ebe7;
+    border-radius: 8px;
+    background: #f5fbfa;
+    text-align: start;
+}
+
+.password-reset-panel h2 {
+    margin-bottom: 8px;
+    color: #172b2a;
+    font-size: 20px;
+}
+
+.password-reset-panel p {
+    margin-bottom: 14px;
+    color: #66736f;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.password-reset-panel .login-form {
+    gap: 10px;
+}
+
+.customers-table-wrap {
+    overflow-x: auto;
+}
+
+.customers-table {
+    min-width: 680px;
+}
+
+.customers-empty {
+    padding: 28px;
+    color: #6b7280;
+    text-align: center;
+}
+
 .product-thumb {
     width: 42px;
     height: 42px;

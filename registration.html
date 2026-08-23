@@ -87,6 +87,19 @@
                 phone: isPhone ? identifier.replace(/\s/g, '') : '',
                 password: registerPassword.value
             };
+            const customers = JSON.parse(localStorage.getItem('lola-customers') || '[]');
+            const duplicate = customers.some(customer =>
+                (account.email && customer.email === account.email) ||
+                (account.phone && customer.phone === account.phone)
+            );
+            if (duplicate) {
+                registrationMessage.textContent = 'هذا البريد الإلكتروني أو رقم الهاتف مسجل بالفعل';
+                registrationMessage.classList.add('visible');
+                return;
+            }
+            account.createdAt = new Date().toISOString();
+            customers.push(account);
+            localStorage.setItem('lola-customers', JSON.stringify(customers));
             localStorage.setItem('lola-account', JSON.stringify(account));
             localStorage.setItem('lola-remembered-email', identifier);
 

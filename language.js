@@ -48,12 +48,22 @@
         'آخر الطلبات': 'Recent orders',
         'تحديث': 'Refresh',
         'رقم الطلب': 'Order ID',
+        'رقم الطلب:': 'Order ID:',
+        'الاسم:': 'Name:',
+        'الهاتف:': 'Phone:',
+        'العنوان:': 'Address:',
+        'المحافظة:': 'Governorate:',
+        'المنتجات:': 'Products:',
+        'الشحن:': 'Shipping:',
+        'الإجمالي:': 'Total:',
+        'ملخص الطلب المرسل بالبريد': 'Email order summary',
         'العميل': 'Customer',
         'العناصر': 'Items',
         'التاريخ': 'Date',
         'المبلغ': 'Amount',
         'الحالة': 'Status',
         'الإجراء': 'Action',
+        'عرض': 'View',
         'تفاصيل الطلب': 'Order details',
         'إغلاق': 'Close',
         'اسم العميل': 'Customer name',
@@ -87,6 +97,41 @@
         , 'ليس لديك حساب؟': "Don't have an account?"
         , 'لديك حساب بالفعل؟': 'Already have an account?'
         , 'تسجيل': 'Register'
+        , 'حكاية Lola': 'The Lola story'
+        , 'إكسسوارات تحمل طابعك الخاص وتكمل أناقتك بتفاصيل صنعت بحب.': 'Accessories with your signature, finished with details made with love.'
+        , 'قصتنا': 'Our story'
+        , 'تفاصيل تصنع الفرق': 'Details make the difference'
+        , 'لماذا Lola؟': 'Why Lola?'
+        , 'ماذا يميزنا؟': 'What makes us different?'
+        , 'خبرة بدأت منذ 2014.': 'Experience since 2014.'
+        , 'سنوات من الشغف والخبرة في اختيار كل تفصيلة.': 'Years of passion and experience in choosing every detail.'
+        , 'تصميمات Handmade مصنوعة بحب.': 'Handmade designs made with love.'
+        , 'قطع مصممة بعناية واهتمام حقيقي بالتفاصيل.': 'Pieces designed with care and real attention to detail.'
+        , 'إكسسوارات مميزة من النحاس.': 'Distinctive copper accessories.'
+        , 'خامات مختارة تمنح كل قطعة حضورًا مختلفًا.': 'Selected materials that give every piece a unique presence.'
+        , 'قطع فريدة لعشاق الاختلاف.': 'Unique pieces for those who love to stand out.'
+        , 'تصميمات تناسب إطلالتك اليومية ومناسباتك الخاصة.': 'Designs for everyday looks and special occasions.'
+        , 'اهتمام بالتفاصيل وجودة التشطيب.': 'Attention to detail and finishing quality.'
+        , 'نراجع كل قطعة لتصل إليك بجودة تليق بك.': 'We review every piece so it reaches you at the quality you deserve.'
+        , 'إطلالات يومية ومناسبات خاصة.': 'Everyday looks and special occasions.'
+        , 'اختيارات مرنة ترافقك في كل لحظة.': 'Versatile choices for every moment.'
+        , 'لأنكِ تستحقين قطعة تشبهكِ': 'Because you deserve a piece that feels like you'
+        , 'في Lola Accessories and Necklaces، هدفنا أن تجدي دائمًا قطعة تشعرين أنها صُنعت خصيصًا لكِ.': 'At Lola Accessories and Necklaces, our goal is for you to always find a piece that feels made just for you.'
+        , 'Lola… تفاصيل صغيرة، تصنع إطلالة مختلفة.': 'Lola... small details, a distinctive look.'
+        , 'نحن هنا من أجلك': 'We are here for you'
+        , 'تواصلي معنا': 'Contact us'
+        , 'يسعدنا أن نسمع منكِ ونساعدكِ في اختيار القطعة التي تشبهكِ.': 'We would love to hear from you and help you find the piece that feels like you.'
+        , 'كوني على تواصل': 'Stay connected'
+        , 'اختاري طريقتك المفضلة للتواصل': 'Choose your preferred way to connect'
+        , 'تابعينا أو راسلينا مباشرة، وسنكون سعداء بالرد على استفساراتك ومساعدتك في كل خطوة.': 'Follow us or message us directly. We will be happy to answer your questions and help at every step.'
+        , 'نرد عليكِ بأقرب وقت ممكن': 'We will reply as soon as possible'
+        , 'واتساب': 'WhatsApp'
+        , 'إنستجرام': 'Instagram'
+        , 'فيسبوك': 'Facebook'
+        , 'راسلينا مباشرة': 'Message us directly'
+        , 'اكتشفي أحدث قطعنا': 'Discover our latest pieces'
+        , 'انضمي إلى مجتمع Lola': 'Join the Lola community'
+        , 'كل قطعة تبدأ بتفصيلة، وكل تواصل يبدأ برسالة.': 'Every piece starts with a detail, and every connection starts with a message.'
         , 'تم تسجيل الدخول بنجاح': 'Signed in successfully'
         , 'كلمتا المرور غير متطابقتين': 'Passwords do not match'
         , 'تسجيل الدخول للمتابعة': 'Sign in to continue'

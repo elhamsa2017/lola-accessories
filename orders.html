@@ -190,6 +190,7 @@
             `).join('');
 
             updateSummary();
+            window.translatePage?.(localStorage.getItem('lola-language') || 'ar');
         }
 
         document.addEventListener('change', (event) => {
@@ -218,6 +219,17 @@
             const total = Number(order.amount || 0);
             document.getElementById('orderDetailsTitle').textContent = `تفاصيل الطلب ${order.id}`;
             document.getElementById('orderDetailsBody').innerHTML = `
+                <div class="order-email-summary">
+                    <p class="order-email-summary-title">ملخص الطلب المرسل بالبريد</p>
+                    <p><strong>رقم الطلب:</strong> ${order.id}</p>
+                    <p><strong>الاسم:</strong> ${order.customer || 'غير متوفر'}</p>
+                    <p><strong>الهاتف:</strong> ${order.phone || 'غير متوفر'}</p>
+                    <p><strong>العنوان:</strong> ${order.address || 'غير متوفر'}</p>
+                    <p><strong>المحافظة:</strong> ${order.governorate || 'غير متوفر'}</p>
+                    <p><strong>المنتجات:</strong> ${orderItems.map(item => `${item.name} (${item.quantity})`).join('، ') || 'لا توجد منتجات'}</p>
+                    <p><strong>الشحن:</strong> ${shipping.toFixed(2)} جنيه</p>
+                    <p><strong>الإجمالي:</strong> ${total.toFixed(2)} جنيه</p>
+                </div>
                 <div class="order-info-grid">
                     <div><span>اسم العميل</span><strong>${order.customer || 'غير متوفر'}</strong></div>
                     <div><span>رقم الهاتف</span><strong>${order.phone || 'غير متوفر'}</strong></div>
@@ -245,6 +257,7 @@
                 </div>
             `;
             document.getElementById('orderDetailsModal').classList.remove('hidden');
+            window.translatePage?.(localStorage.getItem('lola-language') || 'ar');
         });
 
         document.getElementById('closeOrderDetails').addEventListener('click', () => {

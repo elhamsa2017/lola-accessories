@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
+    <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
+        <script src="auth-guard.js"></script>
+    <title>تتبع الطلب | لولا اكسسوارات والنيكلس</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <section id="header">
+        <a href="index.html"><img src="img/logo1.jpg" class="logo" alt="logo"></a>
+        <div>
+            <ul id="navbar">
+                <li><a href="index.html">الرئيسية</a></li>
+                <li><a href="shop.html">المتجر</a></li>
+                <li><a href="about.html">من نحن</a></li>
+                <li><a href="contact.html">تواصل معنا</a></li>
+                <li><a href="cart.html"><i class="fa-solid fa-cart-shopping"></i></a></li>
+            </ul>
+        </div>
+    </section>
+
+    <main class="track-order-page section-p1">
+        <section class="track-order-panel" aria-labelledby="trackOrderTitle">
+            <p class="admin-kicker">متابعة الشحنة</p>
+            <h1 id="trackOrderTitle">تتبع طلبك</h1>
+            <p class="track-order-intro">اكتب رقم الطلب لمعرفة حالته الحالية</p>
+
+            <form id="trackOrderForm" class="track-order-form">
+                <label for="orderNumber">رقم الطلب</label>
+                <div class="track-order-input-row">
+                    <input type="text" id="orderNumber" placeholder="مثال: #123456" required>
+                    <button type="submit" class="normal admin-btn">بحث</button>
+                </div>
+            </form>
+
+            <p id="trackMessage" class="track-message" role="status" aria-live="polite"></p>
+            <article id="orderResult" class="order-result hidden" aria-live="polite"></article>
+        </section>
+
+        <section class="previous-orders-panel" aria-labelledby="previousOrdersTitle">
+            <div class="previous-orders-heading">
+                <div>
+                    <p class="admin-kicker">سجل المشتريات</p>
+                    <h2 id="previousOrdersTitle">طلباتي السابقة</h2>
+                </div>
+                <span id="previousOrdersCount" class="previous-orders-count">0 طلب</span>
+            </div>
+            <div id="previousOrdersList" class="previous-orders-list"></div>
+        </section>
+    </main>
+
+    <script>
+        const ORDERS_KEY = 'lola-accessories-orders';
+        const trackOrderForm = document.getElementById('trackOrderForm');
+        const orderNumberInput = document.getElementById('orderNumber');
+        const trackMessage = document.getElementById('trackMessage');
+        const orderResult = document.getElementById('orderResult');
+        const previousOrdersList = document.getElementById('previousOrdersList');
+        const previousOrdersCount = document.getElementById('previousOrdersCount');
+        let trackedOrderId = '';
+
+        function loadOrders() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
+                return Array.isArray(saved) ? saved : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function getStatusLabel(status) {
+            return {
+                Pending: 'قيد الانتظار',
+                Shipped: 'تم الشحن',
+                Delivered: 'تم التسليم',
+                Cancelled: 'ملغى'
+            }[status] || 'غير محدد';
+        }
+
+        function getStatusClass(status) {
+            return {
+                Pending: 'pending',
+                Shipped: 'shipped',
+                Delivered: 'delivered',
+                Cancelled: 'cancelled'
+            }[status] || 'pending';
+        }
+
+        function renderPreviousOrders() {
+            const orders = loadOrders();
+            previousOrdersCount.textContent = `${orders.length} طلب`;
+
+            if (!orders.length) {
+                previousOrdersList.innerHTML = '<p class="previous-orders-empty">لا توجد طلبات سابقة حتى الآن.</p>';
+                return;
+            }
+
+            previousOrdersList.innerHTML = orders.map(order => `
+                <button type="button" class="previous-order-item" data-order-id="${order.id}">
+                    <span>
+                        <strong>${order.id}</strong>
+                        <small>${order.date || 'تاريخ غير متوفر'} | ${order.items || 0} منتج</small>
+                    </span>
+                    <span>
+                        <strong>${Number(order.amount || 0).toFixed(2)} جنيه</strong>
+                        <small class="status ${getStatusClass(order.status)}">${getStatusLabel(order.status)}</small>
+                    </span>
+                </button>
+            `).join('');
+        }
+
+        function renderTrackedOrder() {
+            const order = loadOrders().find(item => item.id.toLowerCase() === trackedOrderId.toLowerCase());
+            if (!order) {
+                orderResult.classList.add('hidden');
+                trackMessage.textContent = 'لم يتم العثور على طلب بهذا الرقم';
+                trackMessage.className = 'track-message error';
+                return;
+            }
+
+            trackMessage.textContent = 'تم العثور على الطلب';
+            trackMessage.className = 'track-message success';
+            orderResult.innerHTML = `
+                <div class="order-result-header">
+                    <div>
+                        <span>رقم الطلب</span>
+                        <strong>${order.id}</strong>
+                    </div>
+                    <span class="status ${getStatusClass(order.status)}">${getStatusLabel(order.status)}</span>
+                </div>
+                <div class="track-order-details">
+                    <div><span>العميل</span><strong>${order.customer || 'غير متوفر'}</strong></div>
+                    <div><span>تاريخ الطلب</span><strong>${order.date || 'غير متوفر'}</strong></div>
+                    <div><span>عدد المنتجات</span><strong>${order.items || 0}</strong></div>
+                    <div><span>الإجمالي</span><strong>${Number(order.amount || 0).toFixed(2)} جنيه</strong></div>
+                </div>
+                <div class="track-status-note">آخر حالة مسجلة: ${getStatusLabel(order.status)}</div>
+            `;
+            orderResult.classList.remove('hidden');
+        }
+
+        trackOrderForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            trackedOrderId = orderNumberInput.value.trim();
+            if (trackedOrderId) renderTrackedOrder();
+        });
+
+        previousOrdersList.addEventListener('click', (event) => {
+            const orderButton = event.target.closest('[data-order-id]');
+            if (!orderButton) return;
+
+            trackedOrderId = orderButton.dataset.orderId;
+            orderNumberInput.value = trackedOrderId;
+            renderTrackedOrder();
+            orderResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        window.addEventListener('storage', (event) => {
+            if (event.key === ORDERS_KEY) renderPreviousOrders();
+            if (event.key === ORDERS_KEY && trackedOrderId) renderTrackedOrder();
+        });
+
+        setInterval(() => {
+            renderPreviousOrders();
+            if (trackedOrderId) renderTrackedOrder();
+        }, 1000);
+
+        renderPreviousOrders();
+    </script>
+</body>
+
+</html>

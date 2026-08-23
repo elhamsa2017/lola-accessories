@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
+    <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
+        <script src="auth-guard.js"></script>
+    <title>لوحة تحكم الإدارة | لولا اكسسوارات والنيكلس</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <section id="header">
+        <a href="index.html"><img src="img/logo.png" class="logo" alt="logo"></a>
+        <div>
+            <ul id="navbar">
+                <li><a href="index.html">الرئيسية</a></li>
+                <li><a href="shop.html">المتجر</a></li>
+                <li><a href="blog.html">المدونة</a></li>
+                <li><a href="about.html">من نحن</a></li>
+                <li><a href="contact.html">تواصل معنا</a></li>
+                <li><a class="active" href="admin.html">الإدارة</a></li>
+                <li><a href="cart.html"><i class="fa-solid fa-cart-shopping"></i></a></li>
+            </ul>
+        </div>
+    </section>
+
+    <main class="admin-dashboard">
+        <div class="admin-header">
+            <div>
+                <p class="admin-kicker">الإدارة</p>
+                <h1>لوحة تحكم الإدارة</h1>
+            </div>
+            <div class="admin-actions">
+                <a href="products.html" class="normal admin-btn small-btn">المنتجات</a>
+                <a href="orders.html" class="normal admin-btn small-btn">الطلبات</a>
+                <a href="products.html#productFormSection" class="normal admin-btn">+ إضافة منتج</a>
+            </div>
+        </div>
+
+        <section class="admin-grid">
+            <div class="admin-card">
+                <span>إجمالي المبيعات</span>
+                <h3 id="adminTotalSales">0 جنيه</h3>
+                <small>اليوم</small>
+            </div>
+            <div class="admin-card">
+                <span>الطلبات</span>
+                <h3 id="adminTotalOrders">0</h3>
+                <small>إجمالي الطلبات</small>
+            </div>
+            <div class="admin-card">
+                <span>المنتجات</span>
+                <h3 id="adminTotalProducts">0</h3>
+                <small>المتاحة</small>
+            </div>
+            <div class="admin-card">
+                <span>المخزون</span>
+                <h3 id="adminInventory">0%</h3>
+                <small>صحة المخزون</small>
+            </div>
+        </section>
+
+        <section class="admin-panels">
+            <div class="admin-panel">
+                <div class="panel-title">
+                    <h3>آخر الطلبات</h3>
+                    <a href="orders.html">عرض الكل</a>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>رقم الطلب</th>
+                            <th>العميل</th>
+                            <th>العناصر</th>
+                            <th>الحالة</th>
+                            <th>الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardOrdersBody"></tbody>
+                </table>
+            </div>
+
+            <div class="admin-panel">
+                <div class="panel-title">
+                    <h3>ملخص المخزون</h3>
+                    <a href="products.html">تحديث</a>
+                </div>
+                <ul class="inventory-list" id="inventorySummaryList"></ul>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const PRODUCTS_KEY = 'lola-accessories-products';
+        const ORDERS_KEY = 'lola-accessories-orders';
+
+        function loadProducts() {
+            const saved = localStorage.getItem(PRODUCTS_KEY);
+            if (!saved) return [];
+            try { return JSON.parse(saved); } catch { return []; }
+        }
+
+        function loadOrders() {
+            const saved = localStorage.getItem(ORDERS_KEY);
+            if (!saved) return [];
+            try { return JSON.parse(saved); } catch { return []; }
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'Pending': return 'pending';
+                case 'Shipped': return 'shipped';
+                case 'Delivered': return 'delivered';
+                case 'Cancelled': return 'cancelled';
+                default: return 'pending';
+            }
+        }
+
+        function renderDashboard() {
+            const products = loadProducts();
+            const orders = loadOrders();
+
+            const totalSales = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);
+            const stockHealth = products.length ? Math.max(0, Math.min(100, Math.round((products.reduce((sum, product) => sum + Number(product.stock || 0), 0) / (products.length * 50)) * 100))) : 0;
+
+            document.getElementById('adminTotalSales').textContent = totalSales.toFixed(2) + ' جنيه';
+            document.getElementById('adminTotalOrders').textContent = orders.length;
+            document.getElementById('adminTotalProducts').textContent = products.length;
+            document.getElementById('adminInventory').textContent = stockHealth + '%';
+
+            const body = document.getElementById('dashboardOrdersBody');
+            body.innerHTML = (orders.slice(0, 5)).map(order => `
+                <tr>
+                    <td>${order.id}</td>
+                    <td>${order.customer}</td>
+                    <td>${order.items}</td>
+                    <td><span class="status ${getStatusClass(order.status)}">${order.status}</span></td>
+                    <td>${Number(order.amount || 0).toFixed(2)} جنيه</td>
+                </tr>
+            `).join('');
+
+            const categories = ['Accessories', 'Necklaces', 'Bags', 'Jewelry'];
+            const summaryList = document.getElementById('inventorySummaryList');
+            summaryList.innerHTML = categories.map(category => {
+                const count = products.filter(item => item.category === category).length;
+                return `<li><span>${category}</span><strong>${count}</strong></li>`;
+            }).join('');
+        }
+
+        renderDashboard();
+    </script>
+</body>
+
+</html>

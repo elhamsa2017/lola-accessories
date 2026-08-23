@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
+    <title>Register | Lola Accessories and Necklaces</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="login-page">
+    <main class="login-shell">
+        <section class="login-card" aria-labelledby="registrationTitle">
+            <div class="login-brand">
+                <img src="img/logo1.jpg" alt="Lola Accessories and Necklaces logo">
+            </div>
+
+            <h1 id="registrationTitle">Lola Accessories and Necklaces</h1>
+            <p class="login-subtitle">Create your account</p>
+
+            <form id="registrationForm" class="login-form">
+                <label class="login-field">
+                    <i class="fa-regular fa-user" aria-hidden="true"></i>
+                    <span class="sr-only">Full Name</span>
+                    <input type="text" id="registerName" placeholder="Full Name" autocomplete="name" required>
+                </label>
+
+                <label class="login-field">
+                    <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                    <span class="sr-only">Email Address</span>
+                    <input type="email" id="registerEmail" placeholder="Email Address" autocomplete="email" required>
+                </label>
+
+                <label class="login-field">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                    <span class="sr-only">Password</span>
+                    <input type="password" id="registerPassword" placeholder="Password" autocomplete="new-password" minlength="6" required>
+                </label>
+
+                <label class="login-field">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                    <span class="sr-only">Confirm Password</span>
+                    <input type="password" id="confirmPassword" placeholder="Confirm Password" autocomplete="new-password" minlength="6" required>
+                </label>
+
+                <button type="submit" class="login-submit">Create Account <span aria-hidden="true">&#8594;</span></button>
+                <p id="registrationMessage" class="login-message" role="status" aria-live="polite"></p>
+            </form>
+
+            <p class="register-prompt">Already have an account? <a href="login.html">Sign In</a></p>
+        </section>
+    </main>
+
+    <script>
+        const registrationForm = document.getElementById('registrationForm');
+        const registrationMessage = document.getElementById('registrationMessage');
+        const registerPassword = document.getElementById('registerPassword');
+        const confirmPassword = document.getElementById('confirmPassword');
+
+        registrationForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!registrationForm.checkValidity()) {
+                registrationForm.reportValidity();
+                return;
+            }
+
+            if (registerPassword.value !== confirmPassword.value) {
+                registrationMessage.textContent = 'Passwords do not match';
+                registrationMessage.classList.add('visible');
+                confirmPassword.focus();
+                return;
+            }
+
+            const account = {
+                name: document.getElementById('registerName').value.trim(),
+                email: document.getElementById('registerEmail').value.trim(),
+                password: registerPassword.value
+            };
+            localStorage.setItem('lola-account', JSON.stringify(account));
+            localStorage.setItem('lola-remembered-email', account.email);
+
+            registrationMessage.textContent = 'Account created successfully';
+            registrationMessage.classList.add('visible');
+            setTimeout(() => window.location.href = 'login.html', 700);
+        });
+    </script>
+</body>
+
+</html>

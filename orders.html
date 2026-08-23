@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
+    <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
+        <script src="auth-guard.js"></script>
+    <title>إدارة الطلبات | lola accessories and neckales</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <section id="header">
+        <a href="index.html"><img src="img/logo1.jpg" class="logo" alt="logo"></a>
+        <div>
+            <ul id="navbar">
+                <li><a href="index.html">الرئيسية</a></li>
+                <li><a href="shop.html">المتجر</a></li>
+                <li><a href="about.html">من نحن</a></li>
+                <li><a href="contact.html">تواصل معنا</a></li>
+                <li><a href="cart.html"><i class="fa-solid fa-cart-shopping"></i></a></li>
+            </ul>
+        </div>
+    </section>
+
+    <main class="admin-dashboard">
+        <div class="admin-header">
+            <div>
+                <p class="admin-kicker">الطلبات</p>
+                <h1>إدارة الطلبات</h1>
+            </div>
+            <div class="admin-actions">
+                <a href="admin.html" class="normal admin-btn small-btn">العودة للوحة التحكم</a>
+                <a href="products.html" class="normal admin-btn small-btn">إدارة المنتجات</a>
+            </div>
+        </div>
+
+        <section class="admin-grid">
+            <div class="admin-card">
+                <span>قيد الانتظار</span>
+                <h3 id="pendingCount">0</h3>
+                <small>بانتظار المراجعة</small>
+            </div>
+            <div class="admin-card">
+                <span>تم الشحن</span>
+                <h3 id="shippedCount">0</h3>
+                <small>قيد التوصيل</small>
+            </div>
+            <div class="admin-card">
+                <span>تم التسليم</span>
+                <h3 id="deliveredCount">0</h3>
+                <small>تم التوصيل بنجاح</small>
+            </div>
+            <div class="admin-card">
+                <span>إجمالي الإيرادات</span>
+                <h3 id="ordersRevenue">0 جنيه</h3>
+                <small>من جميع الطلبات</small>
+            </div>
+        </section>
+
+        <section class="admin-panel full-width-panel">
+            <div class="panel-title">
+                <h3>آخر الطلبات</h3>
+                <a href="#" id="refreshOrdersBtn">تحديث</a>
+            </div>
+
+            <table class="admin-table order-table">
+                <thead>
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>العميل</th>
+                        <th>العناصر</th>
+                        <th>التاريخ</th>
+                        <th>المبلغ</th>
+                        <th>الحالة</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersTableBody"></tbody>
+            </table>
+        </section>
+    </main>
+
+    <div id="orderDetailsModal" class="order-details-modal hidden" role="dialog" aria-modal="true" aria-labelledby="orderDetailsTitle">
+        <div class="order-details-content">
+            <div class="panel-title">
+                <h3 id="orderDetailsTitle">تفاصيل الطلب</h3>
+                <button type="button" id="closeOrderDetails" class="close-form-btn" aria-label="إغلاق">×</button>
+            </div>
+            <div id="orderDetailsBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const ORDERS_KEY = 'lola-accessories-orders';
+        const PRODUCTS_KEY = 'lola-accessories-products';
+        const productImageFallback = 'img/products/f1.jpg';
+
+        const defaultOrders = [
+            {
+                id: '#1024',
+                customer: 'سارة م.',
+                items: 2,
+                date: '21 Aug 2026',
+                amount: 120,
+                status: 'Shipped',
+                rawItems: [{ name: 'سلسلة ذهبية', quantity: 1, price: 120 }]
+            },
+            {
+                id: '#1025',
+                customer: 'علي ك.',
+                items: 1,
+                date: '20 Aug 2026',
+                amount: 180,
+                status: 'Pending',
+                rawItems: [{ name: 'حقيبة مخملية', quantity: 1, price: 180 }]
+            },
+            {
+                id: '#1026',
+                customer: 'جنى ر.',
+                items: 3,
+                date: '19 Aug 2026',
+                amount: 90,
+                status: 'Delivered',
+                rawItems: [{ name: 'أقراط فاخرة', quantity: 1, price: 90 }]
+            }
+        ];
+
+        function loadOrders() {
+            const saved = localStorage.getItem(ORDERS_KEY);
+            if (!saved) {
+                localStorage.setItem(ORDERS_KEY, JSON.stringify(defaultOrders));
+                return [...defaultOrders];
+            }
+            try {
+                const parsed = JSON.parse(saved);
+                return Array.isArray(parsed) && parsed.length ? parsed : [...defaultOrders];
+            } catch {
+                return [...defaultOrders];
+            }
+        }
+
+        function saveOrders(orders) {
+            localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+        }
+
+        function getProductImage(item) {
+            const savedProducts = JSON.parse(localStorage.getItem(PRODUCTS_KEY) || '[]');
+            const product = savedProducts.find(savedItem => savedItem.id === item.id || savedItem.name === item.name);
+            return item.imageUrl || product?.imageUrl || productImageFallback;
+        }
+
+        function updateSummary() {
+            const orders = loadOrders();
+            const pending = orders.filter(o => o.status === 'Pending').length;
+            const shipped = orders.filter(o => o.status === 'Shipped').length;
+            const delivered = orders.filter(o => o.status === 'Delivered').length;
+            const revenue = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);
+
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('shippedCount').textContent = shipped;
+            document.getElementById('deliveredCount').textContent = delivered;
+            document.getElementById('ordersRevenue').textContent = revenue.toFixed(2) + ' جنيه';
+        }
+
+        function renderOrders() {
+            const orders = loadOrders();
+            const tbody = document.getElementById('ordersTableBody');
+
+            tbody.innerHTML = orders.map(order => `
+                <tr>
+                    <td>${order.id}</td>
+                    <td>${order.customer}</td>
+                    <td>${order.items} عنصر</td>
+                    <td>${order.date}</td>
+                    <td>${Number(order.amount || 0).toFixed(2)} جنيه</td>
+                    <td>
+                        <select class="status-select" data-order-id="${order.id}">
+                            <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>قيد الانتظار</option>
+                            <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>تم الشحن</option>
+                            <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>تم التسليم</option>
+                            <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>ملغى</option>
+                        </select>
+                    </td>
+                    <td><button class="action-btn small-action" data-order-id="${order.id}">عرض</button></td>
+                </tr>
+            `).join('');
+
+            updateSummary();
+        }
+
+        document.addEventListener('change', (event) => {
+            const select = event.target.closest('.status-select');
+            if (!select) return;
+
+            const orders = loadOrders();
+            const order = orders.find(item => item.id === select.dataset.orderId);
+            if (!order) return;
+
+            order.status = select.value;
+            saveOrders(orders);
+            renderOrders();
+        });
+
+        document.addEventListener('click', (event) => {
+            const button = event.target.closest('.small-action');
+            if (!button) return;
+
+            const orders = loadOrders();
+            const order = orders.find(item => item.id === button.dataset.orderId);
+            if (!order) return;
+
+            const orderItems = order.rawItems || [];
+            const shipping = Number(order.shipping || 0);
+            const total = Number(order.amount || 0);
+            document.getElementById('orderDetailsTitle').textContent = `تفاصيل الطلب ${order.id}`;
+            document.getElementById('orderDetailsBody').innerHTML = `
+                <div class="order-info-grid">
+                    <div><span>اسم العميل</span><strong>${order.customer || 'غير متوفر'}</strong></div>
+                    <div><span>رقم الهاتف</span><strong>${order.phone || 'غير متوفر'}</strong></div>
+                    <div><span>المحافظة</span><strong>${order.governorate || 'غير متوفر'}</strong></div>
+                    <div><span>العنوان</span><strong>${order.address || 'غير متوفر'}</strong></div>
+                    <div><span>تاريخ الطلب</span><strong>${order.date || 'غير متوفر'}</strong></div>
+                    <div><span>حالة الطلب</span><strong>${order.status || 'غير متوفر'}</strong></div>
+                </div>
+                <div class="order-total-box">
+                    <div><span>قيمة الشحن</span><strong>${shipping.toFixed(2)} جنيه</strong></div>
+                    <div><span>الإجمالي الكلي</span><strong>${total.toFixed(2)} جنيه</strong></div>
+                </div>
+                <h4 class="order-products-title">منتجات الطلب</h4>
+                <div class="order-products">
+                    ${orderItems.map(item => `
+                        <div class="order-product-item">
+                            <img src="${getProductImage(item)}" alt="${item.name}">
+                            <div>
+                                <strong>${item.name}</strong>
+                                <span>الكمية: ${item.quantity}</span>
+                                <span>${Number(item.price || 0).toFixed(2)} جنيه</span>
+                            </div>
+                        </div>
+                    `).join('') || '<p>لا توجد منتجات بهذا الطلب</p>'}
+                </div>
+            `;
+            document.getElementById('orderDetailsModal').classList.remove('hidden');
+        });
+
+        document.getElementById('closeOrderDetails').addEventListener('click', () => {
+            document.getElementById('orderDetailsModal').classList.add('hidden');
+        });
+
+        document.getElementById('orderDetailsModal').addEventListener('click', (event) => {
+            if (event.target.id === 'orderDetailsModal') event.currentTarget.classList.add('hidden');
+        });
+
+        document.getElementById('refreshOrdersBtn').addEventListener('click', (event) => {
+            event.preventDefault();
+            renderOrders();
+        });
+
+        renderOrders();
+    </script>
+</body>
+
+</html>

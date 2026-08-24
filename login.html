@@ -68,15 +68,20 @@
 		const loginMessage = document.getElementById('loginMessage');
 		const rememberMe = document.getElementById('rememberMe');
 		const loginIdentifier = document.getElementById('loginIdentifier');
+		const loginPassword = document.getElementById('loginPassword');
 		const forgotPasswordPanel = document.getElementById('forgotPasswordPanel');
 		const forgotPasswordForm = document.getElementById('forgotPasswordForm');
 		const resetPasswordForm = document.getElementById('resetPasswordForm');
 		let resetCode = '';
 
 		const savedEmail = localStorage.getItem('lola-remembered-email');
+		const savedPassword = localStorage.getItem('lola-remembered-password');
 		if (savedEmail) {
 			loginIdentifier.value = savedEmail;
 			rememberMe.checked = true;
+		}
+		if (savedPassword) {
+			loginPassword.value = savedPassword;
 		}
 
 		loginForm.addEventListener('submit', (event) => {
@@ -102,8 +107,10 @@
 
 			if (rememberMe.checked) {
 				localStorage.setItem('lola-remembered-email', identifier);
+				localStorage.setItem('lola-remembered-password', loginPassword.value);
 			} else {
 				localStorage.removeItem('lola-remembered-email');
+				localStorage.removeItem('lola-remembered-password');
 			}
 
 			localStorage.setItem('lola-authenticated', 'true');
@@ -165,6 +172,9 @@
 			account.password = document.getElementById('newPassword').value;
 			localStorage.setItem('lola-customers', JSON.stringify(customers));
 			localStorage.setItem('lola-account', JSON.stringify(account));
+			if (localStorage.getItem('lola-remembered-email') === email) {
+				localStorage.setItem('lola-remembered-password', account.password);
+			}
 			loginMessage.textContent = 'تم تغيير كلمة المرور بنجاح';
 			loginMessage.classList.add('visible');
 			forgotPasswordPanel.classList.add('hidden');

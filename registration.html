@@ -102,6 +102,7 @@
             localStorage.setItem('lola-customers', JSON.stringify(customers));
             localStorage.setItem('lola-account', JSON.stringify(account));
             localStorage.setItem('lola-remembered-email', identifier);
+            localStorage.setItem('lola-remembered-password', account.password);
 
             registrationMessage.textContent = 'Account created successfully';
             registrationMessage.classList.add('visible');

@@ -314,6 +314,13 @@ footer .follow{
     margin-top: 20px;
 }
 
+footer .follow .icons img{
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
 footer .follow .icons i{
     position:absolute;
     color:#465b52 ;

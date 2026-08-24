@@ -7,6 +7,7 @@
     <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
         <script src="auth-guard.js"></script>
+        <script src="products-storage.js"></script>
     <title>المتجر | lola accessories and neckales</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -45,33 +46,21 @@
     <script>
         const PRODUCTS_KEY = 'lola-accessories-products';
         const CART_KEY = 'lola-accessories-cart';
+        let activeFilter = 'all';
 
         const defaultProducts = [
-            { id: 'P101', name: 'سلسلة ذهبية', category: 'Necklaces', price: 120, stock: 44, status: 'In Stock', imageUrl: 'https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=400&q=80' },
-            { id: 'P102', name: 'حقيبة مخملية', category: 'Bags', price: 180, stock: 18, status: 'Low Stock', imageUrl: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=400&q=80' },
-            { id: 'P103', name: 'أقراط فاخرة', category: 'Accessories', price: 90, stock: 61, status: 'In Stock', imageUrl: 'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&w=400&q=80' },
-            { id: 'P104', name: 'أسورة بسيطة', category: 'Accessories', price: 70, stock: 9, status: 'Need Restock', imageUrl: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?auto=format&fit=crop&w=400&q=80' }
-           
+            { id: 'كود 1666', name: '1666', category: 'Necklaces', price: 1500, stock: 1, status: 'In Stock', imageUrl: 'img/pro/1666.jpeg', alt: 'كويهات' },
         ];
 
-        function loadProducts() {
-            const saved = localStorage.getItem(PRODUCTS_KEY);
-            if (!saved) {
-                localStorage.setItem(PRODUCTS_KEY, JSON.stringify(defaultProducts));
-                return [...defaultProducts];
-            }
-            try {
-                const parsed = JSON.parse(saved);
-                return Array.isArray(parsed) && parsed.length ? parsed : [...defaultProducts];
-            } catch {
-                return [...defaultProducts];
-            }
+        async function loadProducts() {
+            return window.productStorage.getProducts(defaultProducts);
         }
 
         function getCart() {
             const saved = localStorage.getItem(CART_KEY);
             try {
-                return saved ? JSON.parse(saved) : [];
+                const parsed = saved ? JSON.parse(saved) : [];
+                return Array.isArray(parsed) ? parsed : [];
             } catch {
                 return [];
             }
@@ -90,19 +79,20 @@
 
         function addToCart(productId) {
             const cart = getCart();
-            const existing = cart.find(item => item.id === productId);
+            const normalizedProductId = String(productId);
+            const existing = cart.find(item => String(item.id) === normalizedProductId);
             if (existing) {
                 existing.quantity += 1;
             } else {
-                cart.push({ id: productId, quantity: 1 });
+                cart.push({ id: normalizedProductId, quantity: 1 });
             }
             saveCart(cart);
             updateCartCount();
             alert('تمت إضافة المنتج إلى السلة');
         }
 
-        function renderShopProducts(filter = 'all') {
-            const products = loadProducts();
+        async function renderShopProducts(filter = 'all') {
+            const products = await loadProducts();
             const container = document.getElementById('shopProducts');
             const filtered = filter === 'all' ? products : products.filter(item => item.category === filter);
 
@@ -112,6 +102,7 @@
                     <div class="des">
                         <span>${product.category}</span>
                         <h5>${product.name}</h5>
+                         <h5>${product.description}</h5>
                         <div class="stars" aria-label="تقييم 5 نجوم">
                             <i class="fas fa-star"></i>
                             <i class="fas fa-star"></i>
@@ -121,7 +112,7 @@
                         </div>
                         <h4 class="product-price">${Number(product.price).toFixed(2)} جنيه</h4>
                     </div>
-                    <button class="add-to-cart-btn" data-product-id="${product.id}"><i class="fa-solid fa-cart-shopping"></i> أضف</button>
+                    <button type="button" class="add-to-cart-btn" data-product-id="${product.id}"><i class="fa-solid fa-cart-shopping"></i> أضف</button>
                 </div>
             `).join('');
             window.translatePage?.(localStorage.getItem('lola-language') || 'ar');
@@ -130,15 +121,23 @@
         document.addEventListener('click', (event) => {
             const button = event.target.closest('.add-to-cart-btn');
             if (button) {
+                event.preventDefault();
                 addToCart(button.dataset.productId);
             }
 
             const filterButton = event.target.closest('.pill');
             if (filterButton) {
+                activeFilter = filterButton.dataset.filter;
                 document.querySelectorAll('.pill').forEach(item => item.classList.toggle('active', item === filterButton));
-                renderShopProducts(filterButton.dataset.filter);
+                renderShopProducts(activeFilter);
             }
         });
+
+        window.addEventListener('storage', (event) => {
+            if (event.key === PRODUCTS_KEY) renderShopProducts(activeFilter);
+        });
+
+        window.addEventListener('pageshow', () => renderShopProducts(activeFilter));
 
         updateCartCount();
         renderShopProducts();

@@ -8,6 +8,7 @@
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
         <script src="auth-guard.js"></script>
         <script src="language.js"></script>
+        <script src="products-storage.js"></script>
     <title>لوحة تحكم الإدارة | لولا اكسسوارات والنيكلس</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -99,10 +100,8 @@
         const PRODUCTS_KEY = 'lola-accessories-products';
         const ORDERS_KEY = 'lola-accessories-orders';
 
-        function loadProducts() {
-            const saved = localStorage.getItem(PRODUCTS_KEY);
-            if (!saved) return [];
-            try { return JSON.parse(saved); } catch { return []; }
+        async function loadProducts() {
+            return window.productStorage.getProducts([]);
         }
 
         function loadOrders() {
@@ -121,8 +120,8 @@
             }
         }
 
-        function renderDashboard() {
-            const products = loadProducts();
+        async function renderDashboard() {
+            const products = await loadProducts();
             const orders = loadOrders();
 
             const totalSales = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);

@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="products-storage.js"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
         <script src="auth-guard.js"></script>
@@ -139,10 +140,8 @@
             return SHIPPING_RATES[governorateSelect.value] || 0;
         }
 
-        function loadProducts() {
-            const saved = localStorage.getItem(PRODUCTS_KEY);
-            if (!saved) return [];
-            try { return JSON.parse(saved); } catch { return []; }
+        async function loadProducts() {
+            return window.productStorage.getProducts([]);
         }
 
         function getCart() {
@@ -154,9 +153,9 @@
             localStorage.setItem(CART_KEY, JSON.stringify(cart));
         }
 
-        function renderCart() {
+        async function renderCart() {
             const cart = getCart();
-            const products = loadProducts();
+            const products = await loadProducts();
             const cartItemsContainer = document.getElementById('cartItems');
 
             if (!cart.length) {
@@ -170,7 +169,7 @@
             let subtotal = 0;
 
             cartItemsContainer.innerHTML = cart.map(item => {
-                const product = products.find(p => p.id === item.id);
+                const product = products.find(p => String(p.id) === String(item.id));
                 if (!product) return '';
                 const itemTotal = product.price * item.quantity;
                 subtotal += itemTotal;
@@ -294,7 +293,7 @@
 
             const orders = JSON.parse(localStorage.getItem('lola-accessories-orders') || '[]');
             const cart = getCart();
-            const products = loadProducts();
+            const products = await loadProducts();
             const orderItems = cart.map(item => {
                 const product = products.find(p => p.id === item.id);
                 return {
@@ -302,7 +301,7 @@
                     name: product ? product.name : 'منتج',
                     price: product ? product.price : 0,
                     quantity: item.quantity,
-                    imageUrl: product ? product.imageUrl : ''
+                    imageUrl: ''
                 };
             });
 

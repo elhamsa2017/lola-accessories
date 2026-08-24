@@ -8,6 +8,7 @@
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
         <script src="auth-guard.js"></script>
         <script src="language.js"></script>
+        <script src="products-storage.js"></script>
     <title>إدارة الطلبات | lola accessories and neckales</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -147,8 +148,7 @@
             localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
         }
 
-        function getProductImage(item) {
-            const savedProducts = JSON.parse(localStorage.getItem(PRODUCTS_KEY) || '[]');
+        function getProductImage(item, savedProducts) {
             const product = savedProducts.find(savedItem => savedItem.id === item.id || savedItem.name === item.name);
             return item.imageUrl || product?.imageUrl || productImageFallback;
         }
@@ -166,8 +166,9 @@
             document.getElementById('ordersRevenue').textContent = revenue.toFixed(2) + ' جنيه';
         }
 
-        function renderOrders() {
+        async function renderOrders() {
             const orders = loadOrders();
+            const products = await window.productStorage.getProducts([]);
             const tbody = document.getElementById('ordersTableBody');
 
             tbody.innerHTML = orders.map(order => `
@@ -246,7 +247,7 @@
                 <div class="order-products">
                     ${orderItems.map(item => `
                         <div class="order-product-item">
-                            <img src="${getProductImage(item)}" alt="${item.name}">
+                            <img src="${getProductImage(item, products)}" alt="${item.name}">
                             <div>
                                 <strong>${item.name}</strong>
                                 <span>الكمية: ${item.quantity}</span>

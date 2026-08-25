@@ -6,8 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
-        <script src="auth-guard.js"></script>
         <script src="language.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="supabase-config.js"></script>
+        <script src="auth-guard.js"></script>
+        <script src="orders-storage.js"></script>
         <script src="products-storage.js"></script>
     <title>إدارة الطلبات | lola accessories and neckales</title>
     <link rel="stylesheet" href="style.css">
@@ -96,65 +99,14 @@
     </div>
 
     <script>
-        const ORDERS_KEY = 'lola-accessories-orders';
-        const PRODUCTS_KEY = 'lola-accessories-products';
         const productImageFallback = 'img/products/f1.jpg';
-
-        const defaultOrders = [
-            {
-                id: '#1024',
-                customer: 'سارة م.',
-                items: 2,
-                date: '21 Aug 2026',
-                amount: 120,
-                status: 'Shipped',
-                rawItems: [{ name: 'سلسلة ذهبية', quantity: 1, price: 120 }]
-            },
-            {
-                id: '#1025',
-                customer: 'علي ك.',
-                items: 1,
-                date: '20 Aug 2026',
-                amount: 180,
-                status: 'Pending',
-                rawItems: [{ name: 'حقيبة مخملية', quantity: 1, price: 180 }]
-            },
-            {
-                id: '#1026',
-                customer: 'جنى ر.',
-                items: 3,
-                date: '19 Aug 2026',
-                amount: 90,
-                status: 'Delivered',
-                rawItems: [{ name: 'أقراط فاخرة', quantity: 1, price: 90 }]
-            }
-        ];
-
-        function loadOrders() {
-            const saved = localStorage.getItem(ORDERS_KEY);
-            if (!saved) {
-                localStorage.setItem(ORDERS_KEY, JSON.stringify(defaultOrders));
-                return [...defaultOrders];
-            }
-            try {
-                const parsed = JSON.parse(saved);
-                return Array.isArray(parsed) && parsed.length ? parsed : [...defaultOrders];
-            } catch {
-                return [...defaultOrders];
-            }
-        }
-
-        function saveOrders(orders) {
-            localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-        }
 
         function getProductImage(item, savedProducts) {
             const product = savedProducts.find(savedItem => savedItem.id === item.id || savedItem.name === item.name);
             return item.imageUrl || product?.imageUrl || productImageFallback;
         }
 
-        function updateSummary() {
-            const orders = loadOrders();
+        function updateSummary(orders) {
             const pending = orders.filter(o => o.status === 'Pending').length;
             const shipped = orders.filter(o => o.status === 'Shipped').length;
             const delivered = orders.filter(o => o.status === 'Delivered').length;
@@ -167,8 +119,18 @@
         }
 
         async function renderOrders() {
-            const orders = loadOrders();
-            const products = await window.productStorage.getProducts([]);
+            let orders = [];
+            try {
+                orders = await window.orderStorage.getOrders();
+            } catch (error) {
+                console.error('Unable to load orders:', error);
+            }
+            let products = [];
+            try {
+                products = await window.productStorage.getProducts([]);
+            } catch (error) {
+                console.error('Unable to load products for orders:', error);
+            }
             const tbody = document.getElementById('ordersTableBody');
 
             tbody.innerHTML = orders.map(order => `
@@ -190,32 +152,36 @@
                 </tr>
             `).join('');
 
-            updateSummary();
+            updateSummary(orders);
             window.translatePage?.(localStorage.getItem('lola-language') || 'ar');
         }
 
-        document.addEventListener('change', (event) => {
+        document.addEventListener('change', async (event) => {
             const select = event.target.closest('.status-select');
             if (!select) return;
 
-            const orders = loadOrders();
+            const orders = await window.orderStorage.getOrders();
             const order = orders.find(item => item.id === select.dataset.orderId);
             if (!order) return;
 
-            order.status = select.value;
-            saveOrders(orders);
-            renderOrders();
+            try {
+                await window.orderStorage.updateOrderStatus(order.id, select.value);
+                await renderOrders();
+            } catch (error) {
+                console.error('Unable to update order:', error);
+                alert('تعذر تحديث حالة الطلب.');
+            }
         });
 
-        document.addEventListener('click', (event) => {
+        document.addEventListener('click', async (event) => {
             const button = event.target.closest('.small-action');
             if (!button) return;
 
-            const orders = loadOrders();
+            const orders = await window.orderStorage.getOrders();
             const order = orders.find(item => item.id === button.dataset.orderId);
             if (!order) return;
 
-            const orderItems = order.rawItems || [];
+            const orderItems = order.rawItems || order.raw_items || [];
             const shipping = Number(order.shipping || 0);
             const total = Number(order.amount || 0);
             document.getElementById('orderDetailsTitle').textContent = `تفاصيل الطلب ${order.id}`;

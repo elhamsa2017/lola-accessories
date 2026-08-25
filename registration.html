@@ -52,13 +52,16 @@
         </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth-storage.js"></script>
     <script>
         const registrationForm = document.getElementById('registrationForm');
         const registrationMessage = document.getElementById('registrationMessage');
         const registerPassword = document.getElementById('registerPassword');
         const confirmPassword = document.getElementById('confirmPassword');
 
-        registrationForm.addEventListener('submit', (event) => {
+        registrationForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             if (!registrationForm.checkValidity()) {
                 registrationForm.reportValidity();
@@ -87,26 +90,17 @@
                 phone: isPhone ? identifier.replace(/\s/g, '') : '',
                 password: registerPassword.value
             };
-            const customers = JSON.parse(localStorage.getItem('lola-customers') || '[]');
-            const duplicate = customers.some(customer =>
-                (account.email && customer.email === account.email) ||
-                (account.phone && customer.phone === account.phone)
-            );
-            if (duplicate) {
-                registrationMessage.textContent = 'هذا البريد الإلكتروني أو رقم الهاتف مسجل بالفعل';
+            try {
+                const { session } = await window.authStorage.signUp(account);
+                registrationMessage.textContent = session
+                    ? 'Account created successfully'
+                    : 'تم إنشاء الحساب. تحققي من بريدك الإلكتروني لتفعيل الحساب.';
                 registrationMessage.classList.add('visible');
-                return;
+                setTimeout(() => window.location.href = session ? 'index.html' : 'login.html', 700);
+            } catch (error) {
+                registrationMessage.textContent = error.message || 'تعذر إنشاء الحساب';
+                registrationMessage.classList.add('visible');
             }
-            account.createdAt = new Date().toISOString();
-            customers.push(account);
-            localStorage.setItem('lola-customers', JSON.stringify(customers));
-            localStorage.setItem('lola-account', JSON.stringify(account));
-            localStorage.setItem('lola-remembered-email', identifier);
-            localStorage.setItem('lola-remembered-password', account.password);
-
-            registrationMessage.textContent = 'Account created successfully';
-            registrationMessage.classList.add('visible');
-            setTimeout(() => window.location.href = 'login.html', 700);
         });
     </script>
     <script src="language.js"></script>

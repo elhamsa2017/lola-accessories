@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="supabase-config.js"></script>
         <script src="auth-guard.js"></script>
         <script src="products-storage.js"></script>
     <title>المتجر | lola accessories and neckales</title>
@@ -44,15 +46,11 @@
     </main>
 
     <script>
-        const PRODUCTS_KEY = 'lola-accessories-products';
         const CART_KEY = 'lola-accessories-cart';
         let activeFilter = 'all';
 
-        const defaultProducts = [
-{ id: 'كود 1872', name: '1872 ', category: 'Necklaces', price: 1500, stock: 1, status: 'In Stock', imageUrl: 'img/IMG_3877.jpg', alt: 'كويهات', description: 'عقد مميز من احجار الطبيعية الاماتيست والبرينيت والسترين والروز كوارتز والجاد والعقيق بفواصل بطلاء الذهب وفواصل ذركون' },        ];
-
         async function loadProducts() {
-            return window.productStorage.getProducts(defaultProducts);
+            return window.productStorage.getProducts();
         }
 
         function getCart() {
@@ -95,9 +93,18 @@
             const container = document.getElementById('shopProducts');
             const filtered = filter === 'all' ? products : products.filter(item => item.category === filter);
 
-            container.innerHTML = filtered.map(product => `
+            container.innerHTML = filtered.map(product => {
+                const originalPrice = Number(product.price);
+                const discountPrice = Number(product.discount_price);
+                const hasDiscount = Number.isFinite(discountPrice) && discountPrice > 0 && discountPrice < originalPrice;
+                const discountPercent = hasDiscount ? Math.round((1 - (discountPrice / originalPrice)) * 100) : 0;
+
+                return `
                 <div class="pro">
-                    <img src="${product.imageUrl}" alt="${product.name}">
+                    <div class="product-image-wrap">
+                        ${hasDiscount ? `<span class="discount-badge">-${discountPercent}%</span>` : ''}
+                        <img src="${product.imageUrl}" alt="${product.name}">
+                    </div>
                     <div class="des">
                         <span>${product.category}</span>
                         <h5>${product.name}</h5>
@@ -109,11 +116,17 @@
                             <i class="fas fa-star"></i>
                             <i class="fas fa-star"></i>
                         </div>
-                        <h4 class="product-price">${Number(product.price).toFixed(2)} جنيه</h4>
+                        <div class="product-price${hasDiscount ? ' has-discount' : ''}">
+                            ${hasDiscount
+                                          ? `<span class="price-row original-price">السعر قبل الخصم: <b>${originalPrice.toFixed(2)} جنيه</b></span>
+                                              <strong class="price-row sale-price">السعر بعد الخصم: <b>${discountPrice.toFixed(2)} جنيه</b></strong>`
+                                : `<strong class="regular-price">${originalPrice.toFixed(2)} جنيه</strong>`}
+                        </div>
                     </div>
                     <button type="button" class="add-to-cart-btn" data-product-id="${product.id}"><i class="fa-solid fa-cart-shopping"></i> أضف</button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
             window.translatePage?.(localStorage.getItem('lola-language') || 'ar');
         }
 
@@ -132,16 +145,13 @@
             }
         });
 
-        window.addEventListener('storage', (event) => {
-            if (event.key === PRODUCTS_KEY) renderShopProducts(activeFilter);
-        });
-
         window.addEventListener('pageshow', () => renderShopProducts(activeFilter));
 
         updateCartCount();
         renderShopProducts();
     </script>
     <script src="language.js"></script>
+
 </body>
 
 </html>

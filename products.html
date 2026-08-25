@@ -6,13 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
-        <script src="auth-guard.js"></script>
         <script src="language.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="supabase-config.js"></script>
+        <script src="auth-guard.js"></script>
         <script src="products-storage.js"></script>
     <title>إدارة المنتجات |  lola accessories and neckales</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
     <section id="header">
         <a href="index.html"><img src="img/logo1.jpg" class="logo" alt="logo"></a>
@@ -88,6 +89,17 @@
                         السعر (جنيه)
                         <input type="number" id="productPrice" min="0" step="0.01" placeholder="120.00" required>
                     </label>
+                    <label class="discount-toggle-field">
+                        تفعيل الخصم
+                        <span class="checkbox-control">
+                            <input type="checkbox" id="discountEnabled">
+                            <span>عرض المنتج بسعر مخفض</span>
+                        </span>
+                    </label>
+                    <label id="discountPriceField" class="hidden">
+                        السعر بعد الخصم (جنيه)
+                        <input type="number" id="discountPrice" min="0" step="0.01" placeholder="90.00">
+                    </label>
                     <label>
                         الكمية المتاحة
                         <input type="number" id="productStock" min="0" placeholder="25" required>
@@ -103,6 +115,10 @@
                     <label>
                         صورة المنتج من الكمبيوتر
                         <input type="file" id="productImage" accept="image/*">
+                    </label>
+                    <label>
+                        مسار أو رابط الصورة
+                        <input type="text" id="productImageUrl" placeholder="img/product.jpg أو https://...">
                     </label>
                     <label class="product-description-field">
                         وصف المنتج
@@ -146,12 +162,6 @@
     </main>
 
     <script>
-        const STORAGE_KEY = 'lola-accessories-products';
-
-        const defaultProducts = [
-            { id: 'كود 1872', name: '1872 ', category: 'Necklaces', price: 1500, stock: 1, status: 'In Stock', imageUrl: 'img/IMG_3877.JPG', alt: 'كويهات' , Description: 'عقد مميز من احجار الطبيعية الاماتيست والبرينيت والسترين والروز كوارتز والجاد والعقيق بفواصل بطلاء الذهب وفواصل ذركون' },
-        ];
-
         const productFormSection = document.getElementById('productFormSection');
         const productForm = document.getElementById('productForm');
         const showAddProductFormBtn = document.getElementById('showAddProductForm');
@@ -160,22 +170,16 @@
         const productTableBody = document.getElementById('productTableBody');
         const formTitle = document.getElementById('formTitle');
         const filterButtons = document.querySelectorAll('.pill');
+        const discountEnabled = document.getElementById('discountEnabled');
+        const discountPriceField = document.getElementById('discountPriceField');
+        const discountPrice = document.getElementById('discountPrice');
 
         let currentFilter = 'all';
         let products = [];
 
         async function loadProducts() {
-            products = await window.productStorage.getProducts(defaultProducts);
-            const firstProduct = products.find(product => product.id === '1666');
-            if (firstProduct && !firstProduct.imageUrl) {
-                firstProduct.imageUrl = 'img/IMG-3877.JPG';
-                await window.productStorage.saveProducts(products);
-            }
+            products = await window.productStorage.getProducts();
             return products;
-        }
-
-        async function saveProducts() {
-            await window.productStorage.saveProducts(products);
         }
 
         function getStatusClass(status) {
@@ -236,7 +240,15 @@
             productFormSection.classList.add('hidden');
             productForm.reset();
             document.getElementById('productId').value = '';
+            discountPriceField.classList.add('hidden');
+            discountPrice.required = false;
             formTitle.textContent = 'إضافة منتج جديد';
+        }
+
+        function toggleDiscountField() {
+            const enabled = discountEnabled.checked;
+            discountPriceField.classList.toggle('hidden', !enabled);
+            discountPrice.required = enabled;
         }
 
         function generateProductId() {
@@ -257,6 +269,12 @@
             });
         }
 
+        function getSupabaseErrorMessage(error) {
+            if (!error) return 'خطأ غير معروف';
+            const details = [error.message, error.details, error.hint, error.code].filter(Boolean);
+            return details.length ? details.join(' | ') : String(error);
+        }
+
         async function handleSubmit(event) {
             event.preventDefault();
 
@@ -268,7 +286,9 @@
             const id = document.getElementById('productId').value || generateProductId();
             const existingProduct = products.find(item => String(item.id) === String(id));
             const imageFile = document.getElementById('productImage').files[0];
-            let imageUrl = existingProduct?.imageUrl || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80';
+            let imageUrl = document.getElementById('productImageUrl').value.trim()
+                || existingProduct?.imageUrl
+                || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=400&q=80';
 
             if (imageFile) {
                 if (!imageFile.type.startsWith('image/')) {
@@ -283,28 +303,32 @@
                 name: document.getElementById('productName').value.trim(),
                 category: document.getElementById('productCategory').value,
                 price: Number(document.getElementById('productPrice').value),
+                discount_enabled: discountEnabled.checked,
+                discount_price: discountEnabled.checked ? Number(discountPrice.value) : null,
                 stock: Number(document.getElementById('productStock').value),
                 status: document.getElementById('productStatus').value,
                 description: document.getElementById('productDescription').value.trim(),
                 imageUrl
             };
 
-            if (!product.name || !Number.isFinite(product.price) || !Number.isFinite(product.stock)) {
+            if (!product.name || !Number.isFinite(product.price) || !Number.isFinite(product.stock) ||
+                (product.discount_enabled && (!Number.isFinite(product.discount_price) || product.discount_price >= product.price))) {
                 alert('من فضلك أدخلي اسم المنتج والسعر والكمية بشكل صحيح');
                 return;
             }
 
             const existingIndex = products.findIndex(item => String(item.id) === String(id));
-            if (existingIndex >= 0) {
-                products[existingIndex] = product;
-            } else {
-                products.unshift(product);
-            }
-
             try {
-                await saveProducts();
+                if (existingIndex >= 0) {
+                    await window.productStorage.updateProduct(id, product);
+                    products[existingIndex] = product;
+                } else {
+                    const savedProduct = await window.productStorage.addProduct(product);
+                    products.unshift(savedProduct || product);
+                }
             } catch (error) {
-                alert('تعذر حفظ المنتج. قد تكون مساحة التخزين ممتلئة، جرّبي صورة أصغر.');
+                console.error('Product save failed:', error);
+                alert(`تعذر حفظ المنتج في Supabase: ${getSupabaseErrorMessage(error)}`);
                 return;
             }
             renderProducts();
@@ -323,8 +347,14 @@
             if (actionButton.dataset.action === 'delete') {
                 const confirmDelete = window.confirm(`هل تريد حذف ${product.name}؟`);
                 if (!confirmDelete) return;
-                products = products.filter(item => item.id !== productId);
-                await saveProducts();
+                try {
+                    await window.productStorage.deleteProduct(productId);
+                } catch (error) {
+                    console.error('Product delete failed:', error);
+                    alert(`تعذر حذف المنتج من Supabase: ${getSupabaseErrorMessage(error)}`);
+                    return;
+                }
+                products = products.filter(item => String(item.id) !== String(productId));
                 renderProducts();
                 return;
             }
@@ -334,9 +364,13 @@
                 document.getElementById('productName').value = product.name;
                 document.getElementById('productCategory').value = product.category;
                 document.getElementById('productPrice').value = product.price;
+                discountEnabled.checked = product.discount_enabled === true;
+                discountPrice.value = product.discount_price ?? '';
+                toggleDiscountField();
                 document.getElementById('productStock').value = product.stock;
                 document.getElementById('productStatus').value = product.status;
                 document.getElementById('productImage').value = '';
+                document.getElementById('productImageUrl').value = product.imageUrl || '';
                 document.getElementById('productDescription').value = product.description || '';
                 formTitle.textContent = 'تعديل المنتج';
                 openProductForm();
@@ -344,6 +378,7 @@
         }
 
         productForm.addEventListener('submit', handleSubmit);
+        discountEnabled.addEventListener('change', toggleDiscountField);
         showAddProductFormBtn.addEventListener('click', () => {
             formTitle.textContent = 'إضافة منتج جديد';
             document.getElementById('productId').value = '';
@@ -363,9 +398,11 @@
         });
 
         loadProducts().then(renderProducts).catch(() => {
-            alert('تعذر تحميل المنتجات من مساحة التخزين');
+            alert('تعذر تحميل المنتجات من Supabase. تحققي من الاتصال والصلاحيات.');
         });
     </script>
+
+
 </body>
 
 </html>

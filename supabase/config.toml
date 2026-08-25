@@ -1,0 +1,2 @@
+[functions.set-admin-role]
+verify_jwt = true

@@ -6,7 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
-        <script src="auth-guard.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+            <script src="supabase-config.js"></script>
+            <script src="auth-storage.js"></script>
+            <script src="orders-storage.js"></script>
+            <script src="auth-guard.js"></script>
         <script src="language.js"></script>
     <title>تتبع الطلب | لولا اكسسوارات والنيكلس</title>
     <link rel="stylesheet" href="style.css">
@@ -57,7 +61,6 @@
     </main>
 
     <script>
-        const ORDERS_KEY = 'lola-accessories-orders';
         const trackOrderForm = document.getElementById('trackOrderForm');
         const orderNumberInput = document.getElementById('orderNumber');
         const trackMessage = document.getElementById('trackMessage');
@@ -66,13 +69,9 @@
         const previousOrdersCount = document.getElementById('previousOrdersCount');
         let trackedOrderId = '';
 
-        function loadOrders() {
-            try {
-                const saved = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
-                return Array.isArray(saved) ? saved : [];
-            } catch {
-                return [];
-            }
+        async function loadOrders() {
+            const session = await window.authStorage.getSession();
+            return session ? window.orderStorage.getMyOrders(session.user.id) : [];
         }
 
         function getStatusLabel(status) {
@@ -93,8 +92,8 @@
             }[status] || 'pending';
         }
 
-        function renderPreviousOrders() {
-            const orders = loadOrders();
+        async function renderPreviousOrders() {
+            const orders = await loadOrders();
             previousOrdersCount.textContent = `${orders.length} طلب`;
 
             if (!orders.length) {
@@ -116,8 +115,9 @@
             `).join('');
         }
 
-        function renderTrackedOrder() {
-            const order = loadOrders().find(item => item.id.toLowerCase() === trackedOrderId.toLowerCase());
+        async function renderTrackedOrder() {
+            const orders = await loadOrders();
+            const order = orders.find(item => String(item.id).toLowerCase() === trackedOrderId.toLowerCase());
             if (!order) {
                 orderResult.classList.add('hidden');
                 trackMessage.textContent = 'لم يتم العثور على طلب بهذا الرقم';
@@ -146,33 +146,23 @@
             orderResult.classList.remove('hidden');
         }
 
-        trackOrderForm.addEventListener('submit', (event) => {
+        trackOrderForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             trackedOrderId = orderNumberInput.value.trim();
-            if (trackedOrderId) renderTrackedOrder();
+            if (trackedOrderId) await renderTrackedOrder();
         });
 
-        previousOrdersList.addEventListener('click', (event) => {
+        previousOrdersList.addEventListener('click', async (event) => {
             const orderButton = event.target.closest('[data-order-id]');
             if (!orderButton) return;
 
             trackedOrderId = orderButton.dataset.orderId;
             orderNumberInput.value = trackedOrderId;
-            renderTrackedOrder();
+            await renderTrackedOrder();
             orderResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
 
-        window.addEventListener('storage', (event) => {
-            if (event.key === ORDERS_KEY) renderPreviousOrders();
-            if (event.key === ORDERS_KEY && trackedOrderId) renderTrackedOrder();
-        });
-
-        setInterval(() => {
-            renderPreviousOrders();
-            if (trackedOrderId) renderTrackedOrder();
-        }, 1000);
-
-        renderPreviousOrders();
+        renderPreviousOrders().catch(error => console.error('Unable to load previous orders:', error));
     </script>
 </body>
 

@@ -62,8 +62,14 @@
 			<p class="register-prompt">Don't have an account? <a href="registration.html">Register</a></p>
 		</section>
 	</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-config.js"></script>
+<script src="./auth-storage.js"></script>
 
-	<script>
+<script>
+    console.log("Supabase loaded:", !!window.supabase);
+    console.log("Supabase client loaded:", !!window.supabaseClient);
+
 		const loginForm = document.getElementById('loginForm');
 		const loginMessage = document.getElementById('loginMessage');
 		const rememberMe = document.getElementById('rememberMe');
@@ -75,45 +81,47 @@
 		let resetCode = '';
 
 		const savedEmail = localStorage.getItem('lola-remembered-email');
-		const savedPassword = localStorage.getItem('lola-remembered-password');
+
 		if (savedEmail) {
 			loginIdentifier.value = savedEmail;
 			rememberMe.checked = true;
 		}
-		if (savedPassword) {
-			loginPassword.value = savedPassword;
-		}
 
-		loginForm.addEventListener('submit', (event) => {
+
+				loginForm.addEventListener('submit', async (event) => {
 			event.preventDefault();
 			if (!loginForm.checkValidity()) {
 				loginForm.reportValidity();
 				return;
 			}
 
-			const customers = JSON.parse(localStorage.getItem('lola-customers') || '[]');
-			const legacyAccount = JSON.parse(localStorage.getItem('lola-account') || 'null');
 			const identifier = loginIdentifier.value.trim();
-			const normalizedIdentifier = identifier.replace(/\s/g, '');
-			const account = customers.find(customer =>
-				customer.email?.toLowerCase() === identifier.toLowerCase() || customer.phone === normalizedIdentifier
-			) || legacyAccount;
-			const matchesIdentifier = account && ((account.email && account.email.toLowerCase() === identifier.toLowerCase()) || (account.phone && account.phone === normalizedIdentifier));
-			if (!matchesIdentifier || account.password !== document.getElementById('loginPassword').value) {
-				loginMessage.textContent = 'Incorrect email/phone or password';
+			const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)
+				? identifier.toLowerCase()
+				: identifier;
+			try {
+				const { user } = await window.authStorage.signIn(email, loginPassword.value);
+				const profile = await window.authStorage.getProfile(user.id);
+				if (!profile) {
+					await window.authStorage.saveProfile({
+						id: user.id,
+						full_name: user.user_metadata?.full_name || '',
+						email: user.email || null,
+						phone: user.phone || null
+					});
+				}
+			} catch (error) {
+				loginMessage.textContent = error.message || 'Incorrect email/phone or password';
 				loginMessage.classList.add('visible');
 				return;
 			}
 
 			if (rememberMe.checked) {
 				localStorage.setItem('lola-remembered-email', identifier);
-				localStorage.setItem('lola-remembered-password', loginPassword.value);
 			} else {
 				localStorage.removeItem('lola-remembered-email');
-				localStorage.removeItem('lola-remembered-password');
 			}
 
-			localStorage.setItem('lola-authenticated', 'true');
 			loginMessage.textContent = 'Signed in successfully';
 			loginMessage.classList.add('visible');
 			const redirectPage = new URLSearchParams(window.location.search).get('redirect') || 'index.html';
@@ -134,50 +142,23 @@
 		forgotPasswordForm.addEventListener('submit', async (event) => {
 			event.preventDefault();
 			const email = document.getElementById('resetEmail').value.trim().toLowerCase();
-			const customers = JSON.parse(localStorage.getItem('lola-customers') || '[]');
-			const account = customers.find(customer => customer.email === email);
-			if (!account) {
-				loginMessage.textContent = 'لا يوجد حساب بهذا البريد الإلكتروني';
-				loginMessage.classList.add('visible');
-				return;
-			}
-			resetCode = String(Math.floor(100000 + Math.random() * 900000));
 			try {
-				const response = await fetch('https://formsubmit.co/ajax/' + encodeURIComponent(email), {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-					body: JSON.stringify({ _subject: 'Lola password reset code', message: `Your Lola verification code is: ${resetCode}`, _template: 'table' })
-				});
-				if (!response.ok) throw new Error('Email request failed');
-				forgotPasswordForm.classList.add('hidden');
-				resetPasswordForm.classList.remove('hidden');
-				loginMessage.textContent = 'تم إرسال رمز التحقق إلى بريدك الإلكتروني';
+				    const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+					    redirectTo: `${window.location.origin}/login.html`
+				    });
+				    if (error) throw error;
+				    loginMessage.textContent = 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني';
 				loginMessage.classList.add('visible');
-			} catch {
-				loginMessage.textContent = 'تعذر إرسال البريد الإلكتروني، حاولي مرة أخرى';
+			    } catch (error) {
+				    loginMessage.textContent = error.message || 'تعذر إرسال رابط إعادة التعيين';
 				loginMessage.classList.add('visible');
 			}
 		});
 
 		resetPasswordForm.addEventListener('submit', (event) => {
 			event.preventDefault();
-			if (document.getElementById('resetCode').value.trim() !== resetCode) {
-				loginMessage.textContent = 'رمز التحقق غير صحيح';
-				loginMessage.classList.add('visible');
-				return;
-			}
-			const email = document.getElementById('resetEmail').value.trim().toLowerCase();
-			const customers = JSON.parse(localStorage.getItem('lola-customers') || '[]');
-			const account = customers.find(customer => customer.email === email);
-			account.password = document.getElementById('newPassword').value;
-			localStorage.setItem('lola-customers', JSON.stringify(customers));
-			localStorage.setItem('lola-account', JSON.stringify(account));
-			if (localStorage.getItem('lola-remembered-email') === email) {
-				localStorage.setItem('lola-remembered-password', account.password);
-			}
-			loginMessage.textContent = 'تم تغيير كلمة المرور بنجاح';
+			    loginMessage.textContent = 'استخدمي رابط إعادة التعيين المرسل إلى بريدك الإلكتروني';
 			loginMessage.classList.add('visible');
-			forgotPasswordPanel.classList.add('hidden');
 		});
 
 		document.getElementById('cancelReset').addEventListener('click', () => forgotPasswordPanel.classList.add('hidden'));

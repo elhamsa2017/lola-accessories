@@ -926,6 +926,18 @@ footer .follow .icons i{
     display: none;
 }
 
+.product-price .original-price {
+    color: #8a8a8a;
+    margin-inline-end: 8px;
+    text-decoration: line-through !important;
+    text-decoration-thickness: 2px;
+}
+
+.product-price strong {
+    color: #b8860b;
+    font-weight: 700;
+}
+
 .product-form-panel {
     margin-bottom: 24px;
 }
@@ -955,6 +967,21 @@ footer .follow .icons i{
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s ease;
+}
+
+.checkbox-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.checkbox-control input {
+    width: 18px;
+    height: 18px;
+    accent-color: #088178;
 }
 
 .form-grid textarea {
@@ -1138,13 +1165,31 @@ footer .follow .icons i{
     overflow: hidden;
 }
 
-.shop-grid .pro > img {
+.product-image-wrap {
+    position: relative;
+}
+
+.shop-grid .pro > img,
+.product-image-wrap > img {
     display: block;
     width: 100%;
     height: 260px;
     aspect-ratio: 1 / 1;
     object-fit: contain;
     background: #f7f7f7;
+}
+
+.discount-badge {
+    position: absolute;
+    top: 12px;
+    inset-inline-start: 12px;
+    z-index: 1;
+    padding: 6px 9px;
+    background: #e63946;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
 }
 
 .shop-grid .pro .des {
@@ -1184,6 +1229,56 @@ footer .follow .icons i{
     min-height: 20px;
     color: #f59e0b;
     direction: ltr;
+}
+
+.shop-grid .pro .product-price {
+    min-height: 62px;
+    margin-top: auto;
+    padding: 8px 10px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #088178;
+    font-size: 16px;
+    line-height: 1.35;
+}
+
+.shop-grid .pro .product-price .original-price {
+    display: block;
+    color: #a34b4b;
+    font-size: 12px;
+    line-height: 1.3;
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+}
+
+.shop-grid .pro .product-price .original-price b {
+    font-weight: 700;
+}
+
+.shop-grid .pro .product-price .sale-price {
+    display: block;
+    color: #087f73;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.shop-grid .pro .product-price .price-row {
+    display: block;
+    min-height: 22px;
+    white-space: nowrap;
+}
+
+.shop-grid .pro .product-price .price-row b {
+    font-weight: 800;
+}
+
+.shop-grid .pro .product-price .regular-price {
+    font-size: 18px;
+    font-weight: 800;
 }
 
 .shop-grid .pro .des h4 {

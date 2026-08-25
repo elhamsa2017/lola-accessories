@@ -206,9 +206,15 @@
             element.setAttribute('alt', translateText(original, isEnglish));
         });
         document.querySelectorAll('.product-price').forEach((element) => {
-            const original = element.dataset.originalPrice || element.textContent;
-            element.dataset.originalPrice = original;
-            element.textContent = isEnglish ? original.replace('جنيه', 'EGP') : original.replace('EGP', 'جنيه');
+            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+            const textNodes = [];
+            let node;
+            while ((node = walker.nextNode())) textNodes.push(node);
+            textNodes.forEach((textNode) => {
+                textNode.nodeValue = isEnglish
+                    ? textNode.nodeValue.replace(/جنيه/g, 'EGP')
+                    : textNode.nodeValue.replace(/EGP/g, 'جنيه');
+            });
         });
         document.querySelectorAll('.add-to-cart-btn').forEach((button) => {
             const label = isEnglish ? 'Add' : 'أضف';

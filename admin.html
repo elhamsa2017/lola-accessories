@@ -6,8 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
-        <script src="auth-guard.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="supabase-config.js"></script>
+        <script src="orders-storage.js"></script>
         <script src="language.js"></script>
+        <script src="auth-guard.js"></script>
         <script src="products-storage.js"></script>
     <title>لوحة تحكم الإدارة | لولا اكسسوارات والنيكلس</title>
     <link rel="stylesheet" href="style.css">
@@ -97,17 +100,8 @@
     </main>
 
     <script>
-        const PRODUCTS_KEY = 'lola-accessories-products';
-        const ORDERS_KEY = 'lola-accessories-orders';
-
         async function loadProducts() {
             return window.productStorage.getProducts([]);
-        }
-
-        function loadOrders() {
-            const saved = localStorage.getItem(ORDERS_KEY);
-            if (!saved) return [];
-            try { return JSON.parse(saved); } catch { return []; }
         }
 
         function getStatusClass(status) {
@@ -122,7 +116,7 @@
 
         async function renderDashboard() {
             const products = await loadProducts();
-            const orders = loadOrders();
+            const orders = await window.orderStorage.getOrders();
 
             const totalSales = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);
             const stockHealth = products.length ? Math.max(0, Math.min(100, Math.round((products.reduce((sum, product) => sum + Number(product.stock || 0), 0) / (products.length * 50)) * 100))) : 0;
@@ -151,8 +145,30 @@
             }).join('');
         }
 
-        renderDashboard();
+        renderDashboard().catch(error => console.error('Unable to load dashboard:', error));
     </script>
+
+
+
+<script>
+    async function testSupabase() {
+        const { data, error } = await supabaseClient
+            .from('products')
+            .select('*')
+            .limit(1);
+
+        if (error) {
+            console.error('Supabase Error:', error);
+            alert('الاتصال فشل: ' + error.message);
+            return;
+        }
+
+        console.log('Supabase Connected:', data);
+        alert('تم الاتصال بقاعدة البيانات بنجاح ❤️');
+    }
+
+    testSupabase();
+</script>
 </body>
 
 </html>

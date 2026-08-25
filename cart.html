@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth-storage.js"></script>
+    <script src="orders-storage.js"></script>
     <script src="products-storage.js"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"></script>
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
@@ -115,7 +119,6 @@
     </div>
 
     <script>
-        const PRODUCTS_KEY = 'lola-accessories-products';
         const CART_KEY = 'lola-accessories-cart';
         const GOVERNORATE_KEY = 'lola-accessories-governorate';
         const SHIPPING_RATES = {
@@ -153,6 +156,12 @@
             localStorage.setItem(CART_KEY, JSON.stringify(cart));
         }
 
+        function getSellingPrice(product) {
+            return Number.isFinite(Number(product.discount_price)) && Number(product.discount_price) > 0 && Number(product.discount_price) < Number(product.price)
+                ? Number(product.discount_price)
+                : Number(product.price);
+        }
+
         async function renderCart() {
             const cart = getCart();
             const products = await loadProducts();
@@ -171,7 +180,7 @@
             cartItemsContainer.innerHTML = cart.map(item => {
                 const product = products.find(p => String(p.id) === String(item.id));
                 if (!product) return '';
-                const itemTotal = product.price * item.quantity;
+                const itemTotal = getSellingPrice(product) * item.quantity;
                 subtotal += itemTotal;
 
                 return `
@@ -238,7 +247,6 @@
         });
 
         document.getElementById('checkoutBtn').addEventListener('click', () => {
-            const orders = JSON.parse(localStorage.getItem('lola-accessories-orders') || '[]');
             const cart = getCart();
 
             if (!cart.length) {
@@ -291,15 +299,20 @@
                 return;
             }
 
-            const orders = JSON.parse(localStorage.getItem('lola-accessories-orders') || '[]');
             const cart = getCart();
-            const products = await loadProducts();
+            let products;
+            try {
+                products = await loadProducts();
+            } catch {
+                alert('تعذر تحميل المنتجات، يرجى المحاولة مرة أخرى.');
+                return;
+            }
             const orderItems = cart.map(item => {
                 const product = products.find(p => p.id === item.id);
                 return {
                     id: item.id,
                     name: product ? product.name : 'منتج',
-                    price: product ? product.price : 0,
+                    price: product ? getSellingPrice(product) : 0,
                     quantity: item.quantity,
                     imageUrl: ''
                 };
@@ -319,8 +332,38 @@
                 rawItems: orderItems
             };
 
-            orders.unshift(order);
-            localStorage.setItem('lola-accessories-orders', JSON.stringify(orders));
+            try {
+                const session = await window.authStorage.getSession();
+                if (!session) {
+                    alert('يرجى تسجيل الدخول قبل إتمام الطلب.');
+                    return;
+                }
+                order.user_id = session.user.id;
+                await window.orderStorage.createOrder({
+                    id: order.id,
+                    user_id: order.user_id,
+                    customer: order.customer,
+                    phone: order.phone,
+                    address: order.address,
+                    governorate: order.governorate,
+                    items: order.items,
+                    amount: order.amount,
+                    shipping: order.shipping,
+                    status: order.status,
+                    raw_items: order.rawItems
+                });
+                await window.authStorage.saveProfile({
+                    id: session.user.id,
+                    full_name: order.customer,
+                    email: session.user.email || null,
+                    phone: order.phone,
+                    address: order.address
+                });
+            } catch (error) {
+                console.error('Order save failed:', error);
+                alert(error.message || 'تعذر حفظ الطلب في Supabase.');
+                return;
+            }
             localStorage.setItem(CART_KEY, JSON.stringify([]));
             checkoutModal.classList.add('hidden');
             checkoutForm.reset();

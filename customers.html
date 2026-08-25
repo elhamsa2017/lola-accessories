@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth-storage.js"></script>
     <script src="auth-guard.js"></script>
+    <script src="orders-storage.js"></script>
     <script src="https://kit.fontawesome.com/865ed70645.js" crossorigin="anonymous"></script>
     <script src="language.js"></script>
     <title>العملاء | Lola Accessories and Necklaces</title>
@@ -38,28 +42,31 @@
         </section>
     </main>
     <script>
-        const CUSTOMER_KEY = 'lola-customers';
-        const ORDERS_KEY = 'lola-accessories-orders';
-        function readList(key) {
-            try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; } catch { return []; }
-        }
         function formatCustomerDate(date) {
             if (!date) return 'غير متوفر';
             const parsed = new Date(date);
             return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString();
         }
-        function renderCustomers() {
-            const customers = readList(CUSTOMER_KEY);
-            const legacyAccount = JSON.parse(localStorage.getItem('lola-account') || 'null');
-            if (!customers.length && legacyAccount) customers.push(legacyAccount);
-            const orders = readList(ORDERS_KEY);
+        async function renderCustomers() {
+            let customers = [];
+            let orders = [];
+            try {
+                [customers, orders] = await Promise.all([
+                    window.authStorage.getProfiles(),
+                    window.orderStorage.getOrders()
+                ]);
+            } catch (error) {
+                console.error('Unable to load customers:', error);
+                document.getElementById('customersEmpty').classList.remove('hidden');
+                return;
+            }
             document.getElementById('customersCount').textContent = customers.length;
             document.getElementById('emailCustomersCount').textContent = customers.filter(customer => customer.email).length;
             document.getElementById('phoneCustomersCount').textContent = customers.filter(customer => customer.phone).length;
             document.getElementById('customersEmpty').classList.toggle('hidden', customers.length > 0);
             document.getElementById('customersTableBody').innerHTML = customers.map(customer => {
-                const customerOrders = orders.filter(order => (customer.email && order.email === customer.email) || (customer.phone && order.phone === customer.phone) || order.customer === customer.name).length;
-                return `<tr><td><strong>${customer.name || 'غير متوفر'}</strong></td><td>${customer.email || 'غير مضاف'}</td><td>${customer.phone || 'غير مضاف'}</td><td>${formatCustomerDate(customer.createdAt)}</td><td>${customerOrders}</td></tr>`;
+                const customerOrders = orders.filter(order => order.user_id === customer.id || (customer.phone && order.phone === customer.phone) || order.customer === customer.full_name).length;
+                return `<tr><td><strong>${customer.full_name || 'غير متوفر'}</strong></td><td>${customer.email || 'غير مضاف'}</td><td>${customer.phone || 'غير مضاف'}</td><td>${formatCustomerDate(customer.created_at)}</td><td>${customerOrders}</td></tr>`;
             }).join('');
             window.translatePage?.(localStorage.getItem('lola-language') || 'ar');
         }

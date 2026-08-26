@@ -147,11 +147,14 @@
                 const discountPrice = Number(product.discount_price);
                 const hasDiscount = Number.isFinite(discountPrice) && discountPrice > 0 && discountPrice < originalPrice;
                 const discountPercent = hasDiscount ? Math.round((1 - (discountPrice / originalPrice)) * 100) : 0;
+                const isSold = Number(product.stock) <= 0 || ['Sold', 'تم البيع'].includes(String(product.status || '').trim());
+                const availabilityLabel = isSold ? 'تم البيع' : 'متوفر';
 
                 return `
-                <div class="pro">
+                <div class="pro${isSold ? ' sold-product' : ''}">
                     <div class="product-image-wrap">
                         ${hasDiscount ? `<span class="discount-badge">-${discountPercent}%</span>` : ''}
+                        <span class="availability-badge ${isSold ? 'sold' : 'available'}">${availabilityLabel}</span>
                         <img src="${product.imageUrl || 'img/products/f1.jpg'}" alt="${product.name}">
                     </div>
                     <div class="des">
@@ -172,7 +175,7 @@
                                 : `<strong class="regular-price">${originalPrice.toFixed(2)} جنيه</strong>`}
                         </div>
                     </div>
-                    <button type="button" class="add-to-cart-btn" data-product-id="${product.id}"><i class="fa-solid fa-cart-shopping"></i> أضف</button>
+                    <button type="button" class="add-to-cart-btn" data-product-id="${product.id}"${isSold ? ' disabled' : ''}><i class="fa-solid fa-cart-shopping"></i> ${isSold ? 'غير متوفر' : 'أضف للسلة'}</button>
                 </div>
             `;
             }).join('') : '<p class="shop-load-error">لا توجد منتجات في هذا التصنيف.</p>';

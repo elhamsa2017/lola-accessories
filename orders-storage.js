@@ -39,5 +39,22 @@
             return data || [];
         }
 
-        window.orderStorage = { getOrders, getMyOrders, createOrder, updateOrderStatus };
+        async function getOrderById(orderId) {
+            const normalizedOrderId = String(orderId).trim().replace(/^#?/, '#');
+            const { data, error } = await supabaseClient.rpc('get_order_by_id', {
+                p_order_id: normalizedOrderId
+            });
+            if (error) {
+                const fallback = await supabaseClient
+                    .from('orders')
+                    .select('*')
+                    .eq('id', normalizedOrderId)
+                    .maybeSingle();
+                if (fallback.error) throw error;
+                return fallback.data || null;
+            }
+            return Array.isArray(data) ? data[0] || null : data || null;
+        }
+
+        window.orderStorage = { getOrders, getMyOrders, getOrderById, createOrder, updateOrderStatus };
 })();

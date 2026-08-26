@@ -109,6 +109,7 @@
                             <option value="In Stock">متوفر</option>
                             <option value="Low Stock">غير متوفّر</option>
                             <option value="Need Restock">يحتاج تجديد</option>
+                            <option value="Sold">تم البيع</option>
                         </select>
                     </label>
                     <label>
@@ -186,6 +187,7 @@
                 case 'In Stock': return 'delivered';
                 case 'Low Stock': return 'shipped';
                 case 'Need Restock': return 'pending';
+                case 'Sold': return 'cancelled';
                 default: return 'pending';
             }
         }

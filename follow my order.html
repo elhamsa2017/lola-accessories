@@ -70,7 +70,13 @@
 
         async function loadOrders() {
             const session = await window.authStorage.getSession();
-            return session ? window.orderStorage.getMyOrders(session.user.id) : [];
+            if (!session) return [];
+            try {
+                return await window.orderStorage.getMyOrders(session.user.id);
+            } catch (error) {
+                console.warn('Previous orders are unavailable:', error);
+                return [];
+            }
         }
 
         function getStatusLabel(status) {
@@ -115,8 +121,16 @@
         }
 
         async function renderTrackedOrder() {
-            const orders = await loadOrders();
-            const order = orders.find(item => String(item.id).toLowerCase() === trackedOrderId.toLowerCase());
+            let order;
+            try {
+                order = await window.orderStorage.getOrderById(trackedOrderId);
+            } catch (error) {
+                console.error('Unable to track order:', error);
+                orderResult.classList.add('hidden');
+                trackMessage.textContent = 'خدمة التتبع غير مفعلة حاليًا. يرجى التواصل مع المتجر.';
+                trackMessage.className = 'track-message error';
+                return;
+            }
             if (!order) {
                 orderResult.classList.add('hidden');
                 trackMessage.textContent = 'لم يتم العثور على طلب بهذا الرقم';
@@ -147,7 +161,8 @@
 
         trackOrderForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            trackedOrderId = orderNumberInput.value.trim();
+            trackedOrderId = orderNumberInput.value.trim().replace(/^#?/, '#');
+            orderNumberInput.value = trackedOrderId;
             if (trackedOrderId) await renderTrackedOrder();
         });
 

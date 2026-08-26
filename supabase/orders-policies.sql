@@ -61,3 +61,18 @@ using (
 with check (
     (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
 );
+
+-- Allow customers to track one order by its exact order number without exposing all orders.
+create or replace function public.get_order_by_id(p_order_id text)
+returns setof public.orders
+language sql
+security definer
+set search_path = public
+as $$
+    select *
+    from public.orders
+    where id = p_order_id
+    limit 1;
+$$;
+
+grant execute on function public.get_order_by_id(text) to anon, authenticated;

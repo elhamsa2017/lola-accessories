@@ -1192,6 +1192,28 @@ footer .follow .icons i{
     line-height: 1;
 }
 
+.availability-badge {
+    position: absolute;
+    top: 12px;
+    inset-inline-end: 12px;
+    z-index: 1;
+    padding: 6px 9px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.availability-badge.available {
+    background: #dff5e9;
+    color: #18794e;
+}
+
+.availability-badge.sold {
+    background: #fee2e2;
+    color: #b42318;
+}
+
 .shop-grid .pro .des {
     flex: 1;
     display: flex;
@@ -1299,6 +1321,17 @@ footer .follow .icons i{
     padding: 12px 14px;
     font-weight: 700;
     cursor: pointer;
+}
+
+.add-to-cart-btn:disabled {
+    background: #a8b3b0;
+    cursor: not-allowed;
+    opacity: 0.9;
+}
+
+.sold-product .product-image-wrap > img {
+    filter: grayscale(0.35);
+    opacity: 0.72;
 }
 
 .cart-count {

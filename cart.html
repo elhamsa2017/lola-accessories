@@ -266,7 +266,7 @@
 
         function sendOrderWhatsApp(order, orderItems) {
             const productsMessage = orderItems.map(item =>
-                `- ${item.name} | الكمية: ${item.quantity} | السعر: ${Number(item.price || 0).toFixed(2)} جنيه`
+                `- ${item.name} | الكمية: ${item.quantity} | السعر: ${Number(item.price || 0).toFixed(2)} جنيه\n  صورة المنتج: ${getProductImageUrl(item.imageUrl)}`
             ).join('\n');
             const whatsappMessage = [
                 'طلب جديد من متجر Lola Accessories',
@@ -288,6 +288,14 @@
             const whatsappWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
             if (!whatsappWindow) {
                 window.location.assign(whatsappUrl);
+            }
+        }
+
+        function getProductImageUrl(imageUrl) {
+            try {
+                return new URL(imageUrl, document.baseURI).href;
+            } catch {
+                return imageUrl || 'غير متاحة';
             }
         }
 

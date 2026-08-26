@@ -8,15 +8,15 @@
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <script src="supabase-config.js"></script>
         <script src="auth-guard.js"></script>
+        <script src="products-storage.js"></script>
     <title>lola accessories and neckales</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="home-page">
-    <section id="header"><a href="*"><img src  ="img/logo1.jpg" class="logo" alt="logo"></a>
+    <section id="header"><a href="index.html"><img src  ="img/logo1.jpg" class="logo" alt="logo"></a>
         <div><ul id="navbar">
 
             <li><a class="active" href ="index.html">الرئيسية</a></li>
-            <li><a href="shop.html">المتجر</a></li>
             <li><a href="about.html">الاراء</a></li>
             <li><a href="contact.html">تواصل معنا</a></li>
             <li><a href="language.html">اللغه</a></li>
@@ -34,7 +34,7 @@
             <div class="slides">
                 <img src="img/1798.jpg" class="slide active" alt="صورة 1">
                 <img src="img/1853.jpg" class="slide" alt="صورة 2">
-                <img src="img/1867.jpg" class="Slide" alt="صورة 3">
+                <img src="img/1867.jpg" class="slide" alt="صورة 3">
                 <img src="img/1868.jpg" class="slide" alt="صورة 4">
                 <img src="img/1874.jpg" class="slide" alt="صورة 5">
                 <button class="prev" type="button" aria-label="الصورة السابقة"></button>
@@ -47,11 +47,162 @@
                     <span class="dot"></span>
                 </div>
 
-            </div>       
+            </div>
         </div>
-    </section>
-    </section>
 
+    <main class="shop-page home-products section-p1">
+        <div class="product-search" role="search">
+            <label class="search-label" for="productSearchInput">البحث باسم الصنف</label>
+            <div class="search-field">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input id="productSearchInput" type="search" placeholder="ابحثي عن اسم الصنف" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="page-intro">
+            <span class="section-kicker">اختيارات Lola</span>
+            <h1>تسوق جميع المنتجات</h1>
+            <p>اكتشفي تشكيلتنا المختارة من القطع التي تضيف لمستك الخاصة لكل إطلالة.</p>
+        </div>
+
+        <div class="shop-controls">
+            <div class="filter-pills" aria-label="Product filters">
+                <button type="button" class="pill active" data-filter="all">الكل</button>
+                <button type="button" class="pill" data-filter="Accessories">كوليهات</button>
+                <button type="button" class="pill" data-filter="Necklaces">اساور</button>
+                <button type="button" class="pill" data-filter="Bags">نحاس</button>
+            </div>
+        </div>
+
+        <div id="shopProducts" class="pro-container shop-grid"></div>
+    </main>
+
+    <script>
+        const CART_KEY = 'lola-accessories-cart';
+        let activeFilter = 'all';
+        let allProducts = null;
+
+        async function loadProducts() {
+            if (!Array.isArray(allProducts)) {
+                allProducts = await window.productStorage.getProducts();
+            }
+            return allProducts;
+        }
+
+        function getCart() {
+            const saved = localStorage.getItem(CART_KEY);
+            try {
+                const parsed = saved ? JSON.parse(saved) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveCart(cart) {
+            localStorage.setItem(CART_KEY, JSON.stringify(cart));
+        }
+
+        function updateCartCount() {
+            const countEl = document.getElementById('cartCount');
+            if (!countEl) return;
+            const count = getCart().reduce((sum, item) => sum + item.quantity, 0);
+            countEl.textContent = count;
+        }
+
+        function addToCart(productId) {
+            const cart = getCart();
+            const normalizedProductId = String(productId);
+            const existing = cart.find(item => String(item.id) === normalizedProductId);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ id: normalizedProductId, quantity: 1 });
+            }
+            saveCart(cart);
+            updateCartCount();
+            alert('تمت إضافة المنتج إلى السلة');
+        }
+
+        async function renderShopProducts(filter = 'all', searchTerm = '') {
+            const container = document.getElementById('shopProducts');
+            let products;
+            try {
+                products = await loadProducts();
+            } catch (error) {
+                console.error('Unable to load shop products:', error);
+                container.innerHTML = '<p class="shop-load-error">تعذر تحميل المنتجات. حدّثي الصفحة وحاولي مرة أخرى.</p>';
+                return;
+            }
+            const normalizedSearch = searchTerm.trim().toLocaleLowerCase();
+            const filtered = products.filter(item => {
+                const matchesFilter = filter === 'all' || item.category === filter;
+                const searchableText = `${item.name || ''} ${item.description || ''}`.toLocaleLowerCase();
+                const matchesSearch = !normalizedSearch || searchableText.includes(normalizedSearch);
+                return matchesFilter && matchesSearch;
+            });
+
+            container.innerHTML = filtered.length ? filtered.map(product => {
+                const originalPrice = Number(product.price);
+                const discountPrice = Number(product.discount_price);
+                const hasDiscount = Number.isFinite(discountPrice) && discountPrice > 0 && discountPrice < originalPrice;
+                const discountPercent = hasDiscount ? Math.round((1 - (discountPrice / originalPrice)) * 100) : 0;
+
+                return `
+                <div class="pro">
+                    <div class="product-image-wrap">
+                        ${hasDiscount ? `<span class="discount-badge">-${discountPercent}%</span>` : ''}
+                        <img src="${product.imageUrl || 'img/products/f1.jpg'}" alt="${product.name}">
+                    </div>
+                    <div class="des">
+                        <span>${product.category}</span>
+                        <h5>${product.name}</h5>
+                        <p class="product-description">${product.description || 'قطعة مميزة بتفاصيل مصممة بعناية.'}</p>
+                        <div class="stars" aria-label="تقييم 5 نجوم">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="product-price${hasDiscount ? ' has-discount' : ''}">
+                            ${hasDiscount
+                                          ? `<span class="price-row original-price">السعر قبل الخصم: <b>${originalPrice.toFixed(2)} جنيه</b></span>
+                                              <strong class="price-row sale-price">السعر بعد الخصم: <b>${discountPrice.toFixed(2)} جنيه</b></strong>`
+                                : `<strong class="regular-price">${originalPrice.toFixed(2)} جنيه</strong>`}
+                        </div>
+                    </div>
+                    <button type="button" class="add-to-cart-btn" data-product-id="${product.id}"><i class="fa-solid fa-cart-shopping"></i> أضف</button>
+                </div>
+            `;
+            }).join('') : '<p class="shop-load-error">لا توجد منتجات في هذا التصنيف.</p>';
+            window.translatePage?.(localStorage.getItem('lola-language') || 'ar');
+        }
+
+        document.addEventListener('click', (event) => {
+            const button = event.target.closest('.add-to-cart-btn');
+            if (button) {
+                event.preventDefault();
+                addToCart(button.dataset.productId);
+            }
+
+            const filterButton = event.target.closest('.pill');
+            if (filterButton) {
+                activeFilter = filterButton.dataset.filter;
+                document.querySelectorAll('.pill').forEach(item => item.classList.toggle('active', item === filterButton));
+                renderShopProducts(activeFilter, document.getElementById('productSearchInput')?.value || '');
+            }
+        });
+
+        document.getElementById('productSearchInput')?.addEventListener('input', (event) => {
+            renderShopProducts(activeFilter, event.target.value);
+        });
+
+        window.addEventListener('pageshow', () => renderShopProducts(activeFilter));
+
+        updateCartCount();
+        renderShopProducts();
+    </script>
 
 
     <footer class="section-p1">

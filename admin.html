@@ -22,7 +22,6 @@
         <div>
             <ul id="navbar">
                 <li><a href="index.html">الرئيسية</a></li>
-                <li><a href="shop.html">المتجر</a></li>
                 <li><a href="blog.html">المدونة</a></li>
                 <li><a href="about.html">من نحن</a></li>
                 <li><a href="contact.html">تواصل معنا</a></li>
@@ -118,7 +117,7 @@
             const products = await loadProducts();
             const orders = await window.orderStorage.getOrders();
 
-            const totalSales = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);
+            const totalSales = orders.reduce((sum, order) => sum + Number(order.total ?? order.amount ?? 0), 0);
             const stockHealth = products.length ? Math.max(0, Math.min(100, Math.round((products.reduce((sum, product) => sum + Number(product.stock || 0), 0) / (products.length * 50)) * 100))) : 0;
 
             document.getElementById('adminTotalSales').textContent = totalSales.toFixed(2) + ' جنيه';
@@ -130,10 +129,10 @@
             body.innerHTML = (orders.slice(0, 5)).map(order => `
                 <tr>
                     <td>${order.id}</td>
-                    <td>${order.customer}</td>
+                    <td>${order.customer_name || order.customer || 'غير متوفر'}</td>
                     <td>${order.items}</td>
                     <td><span class="status ${getStatusClass(order.status)}">${order.status}</span></td>
-                    <td>${Number(order.amount || 0).toFixed(2)} جنيه</td>
+                    <td>${Number(order.total ?? order.amount ?? 0).toFixed(2)} جنيه</td>
                 </tr>
             `).join('');
 

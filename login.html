@@ -125,7 +125,7 @@
 			loginMessage.textContent = 'Signed in successfully';
 			loginMessage.classList.add('visible');
 			const redirectPage = new URLSearchParams(window.location.search).get('redirect') || 'index.html';
-			const allowedPages = ['index.html', 'shop.html', 'cart.html', 'admin.html', 'orders.html', 'products.html', 'customers.html', 'follow my order.html', 'about.html', 'contact.html', 'language.html'];
+			const allowedPages = ['index.html', 'cart.html', 'admin.html', 'orders.html', 'products.html', 'customers.html', 'follow my order.html', 'about.html', 'contact.html', 'language.html'];
 			const safeRedirect = allowedPages.includes(redirectPage) ? redirectPage : 'index.html';
 			setTimeout(() => window.location.href = safeRedirect, 700);
 		});

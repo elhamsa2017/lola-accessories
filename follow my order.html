@@ -22,7 +22,6 @@
         <div>
             <ul id="navbar">
                 <li><a href="index.html">الرئيسية</a></li>
-                <li><a href="shop.html">المتجر</a></li>
                 <li><a href="about.html">من نحن</a></li>
                 <li><a href="contact.html">تواصل معنا</a></li>
                 <li><a href="cart.html"><i class="fa-solid fa-cart-shopping"></i></a></li>
@@ -105,10 +104,10 @@
                 <button type="button" class="previous-order-item" data-order-id="${order.id}">
                     <span>
                         <strong>${order.id}</strong>
-                        <small>${order.date || 'تاريخ غير متوفر'} | ${order.items || 0} منتج</small>
+                        <small>${order.date || (order.created_at ? new Date(order.created_at).toLocaleDateString() : 'تاريخ غير متوفر')} | ${order.items || 0} منتج</small>
                     </span>
                     <span>
-                        <strong>${Number(order.amount || 0).toFixed(2)} جنيه</strong>
+                        <strong>${Number(order.total ?? order.amount ?? 0).toFixed(2)} جنيه</strong>
                         <small class="status ${getStatusClass(order.status)}">${getStatusLabel(order.status)}</small>
                     </span>
                 </button>
@@ -136,10 +135,10 @@
                     <span class="status ${getStatusClass(order.status)}">${getStatusLabel(order.status)}</span>
                 </div>
                 <div class="track-order-details">
-                    <div><span>العميل</span><strong>${order.customer || 'غير متوفر'}</strong></div>
-                    <div><span>تاريخ الطلب</span><strong>${order.date || 'غير متوفر'}</strong></div>
+                    <div><span>العميل</span><strong>${order.customer_name || order.customer || 'غير متوفر'}</strong></div>
+                    <div><span>تاريخ الطلب</span><strong>${order.date || (order.created_at ? new Date(order.created_at).toLocaleDateString() : 'غير متوفر')}</strong></div>
                     <div><span>عدد المنتجات</span><strong>${order.items || 0}</strong></div>
-                    <div><span>الإجمالي</span><strong>${Number(order.amount || 0).toFixed(2)} جنيه</strong></div>
+                    <div><span>الإجمالي</span><strong>${Number(order.total ?? order.amount ?? 0).toFixed(2)} جنيه</strong></div>
                 </div>
                 <div class="track-status-note">آخر حالة مسجلة: ${getStatusLabel(order.status)}</div>
             `;

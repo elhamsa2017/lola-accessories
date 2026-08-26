@@ -22,7 +22,6 @@
         <div>
             <ul id="navbar">
                 <li><a href="index.html">الرئيسية</a></li>
-                <li><a href="shop.html">المتجر</a></li>
                 <li><a href="about.html">من نحن</a></li>
                 <li><a href="contact.html">تواصل معنا</a></li>
                 <li><a href="cart.html"><i class="fa-solid fa-cart-shopping"></i></a></li>
@@ -76,6 +75,7 @@
                     <tr>
                         <th>رقم الطلب</th>
                         <th>العميل</th>
+                        <th>الصور</th>
                         <th>العناصر</th>
                         <th>التاريخ</th>
                         <th>المبلغ</th>
@@ -100,17 +100,29 @@
 
     <script>
         const productImageFallback = 'img/products/f1.jpg';
+        let products = [];
 
         function getProductImage(item, savedProducts) {
-            const product = savedProducts.find(savedItem => savedItem.id === item.id || savedItem.name === item.name);
+            const product = savedProducts.find(savedItem => String(savedItem.id) === String(item.id) || savedItem.name === item.name);
             return item.imageUrl || product?.imageUrl || productImageFallback;
+        }
+
+        function getOrderItems(order) {
+            const savedItems = order.rawItems || order.raw_items || [];
+            if (Array.isArray(savedItems)) return savedItems;
+            try {
+                const parsedItems = JSON.parse(savedItems);
+                return Array.isArray(parsedItems) ? parsedItems : [];
+            } catch {
+                return [];
+            }
         }
 
         function updateSummary(orders) {
             const pending = orders.filter(o => o.status === 'Pending').length;
             const shipped = orders.filter(o => o.status === 'Shipped').length;
             const delivered = orders.filter(o => o.status === 'Delivered').length;
-            const revenue = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);
+            const revenue = orders.reduce((sum, order) => sum + Number(order.total ?? order.amount ?? 0), 0);
 
             document.getElementById('pendingCount').textContent = pending;
             document.getElementById('shippedCount').textContent = shipped;
@@ -124,8 +136,10 @@
                 orders = await window.orderStorage.getOrders();
             } catch (error) {
                 console.error('Unable to load orders:', error);
+                document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan="8">تعذر تحميل الطلبات. تأكدي من تشغيل سياسات Supabase وتسجيل الدخول كمسؤولة.</td></tr>';
+                return;
             }
-            let products = [];
+            products = [];
             try {
                 products = await window.productStorage.getProducts([]);
             } catch (error) {
@@ -133,24 +147,33 @@
             }
             const tbody = document.getElementById('ordersTableBody');
 
-            tbody.innerHTML = orders.map(order => `
-                <tr>
-                    <td>${order.id}</td>
-                    <td>${order.customer}</td>
-                    <td>${order.items} عنصر</td>
-                    <td>${order.date}</td>
-                    <td>${Number(order.amount || 0).toFixed(2)} جنيه</td>
-                    <td>
-                        <select class="status-select" data-order-id="${order.id}">
-                            <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>قيد الانتظار</option>
-                            <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>تم الشحن</option>
-                            <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>تم التسليم</option>
-                            <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>ملغى</option>
-                        </select>
-                    </td>
-                    <td><button class="action-btn small-action" data-order-id="${order.id}">عرض</button></td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = orders.map(order => {
+                const orderItems = getOrderItems(order);
+                const itemCount = orderItems.reduce((total, item) => total + Number(item.quantity || 0), 0) || Number(order.items || 0);
+                const images = orderItems.map(item => `
+                    <img class="order-table-image" src="${getProductImage(item, products)}" alt="${item.name || 'منتج'}" title="${item.name || 'منتج'}">
+                `).join('');
+
+                return `
+                    <tr>
+                        <td>${order.id}</td>
+                        <td>${order.customer_name || order.customer || 'غير متوفر'}</td>
+                        <td><div class="order-table-images">${images || '<span>لا توجد صورة</span>'}</div></td>
+                        <td>${itemCount} عنصر</td>
+                        <td>${order.date || (order.created_at ? new Date(order.created_at).toLocaleDateString() : 'غير متوفر')}</td>
+                        <td>${Number(order.total ?? order.amount ?? 0).toFixed(2)} جنيه</td>
+                        <td>
+                            <select class="status-select" data-order-id="${order.id}">
+                                <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>قيد الانتظار</option>
+                                <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>تم الشحن</option>
+                                <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>تم التسليم</option>
+                                <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>ملغى</option>
+                            </select>
+                        </td>
+                        <td><button class="action-btn small-action" data-order-id="${order.id}">عرض</button></td>
+                    </tr>
+                `;
+            }).join('');
 
             updateSummary(orders);
             window.translatePage?.(localStorage.getItem('lola-language') || 'ar');
@@ -181,15 +204,15 @@
             const order = orders.find(item => item.id === button.dataset.orderId);
             if (!order) return;
 
-            const orderItems = order.rawItems || order.raw_items || [];
+            const orderItems = getOrderItems(order);
             const shipping = Number(order.shipping || 0);
-            const total = Number(order.amount || 0);
+            const total = Number(order.total ?? order.amount ?? 0);
             document.getElementById('orderDetailsTitle').textContent = `تفاصيل الطلب ${order.id}`;
             document.getElementById('orderDetailsBody').innerHTML = `
                 <div class="order-email-summary">
                     <p class="order-email-summary-title">ملخص الطلب المرسل بالبريد</p>
                     <p><strong>رقم الطلب:</strong> ${order.id}</p>
-                    <p><strong>الاسم:</strong> ${order.customer || 'غير متوفر'}</p>
+                    <p><strong>الاسم:</strong> ${order.customer_name || order.customer || 'غير متوفر'}</p>
                     <p><strong>الهاتف:</strong> ${order.phone || 'غير متوفر'}</p>
                     <p><strong>العنوان:</strong> ${order.address || 'غير متوفر'}</p>
                     <p><strong>المحافظة:</strong> ${order.governorate || 'غير متوفر'}</p>
@@ -198,11 +221,11 @@
                     <p><strong>الإجمالي:</strong> ${total.toFixed(2)} جنيه</p>
                 </div>
                 <div class="order-info-grid">
-                    <div><span>اسم العميل</span><strong>${order.customer || 'غير متوفر'}</strong></div>
+                    <div><span>اسم العميل</span><strong>${order.customer_name || order.customer || 'غير متوفر'}</strong></div>
                     <div><span>رقم الهاتف</span><strong>${order.phone || 'غير متوفر'}</strong></div>
                     <div><span>المحافظة</span><strong>${order.governorate || 'غير متوفر'}</strong></div>
                     <div><span>العنوان</span><strong>${order.address || 'غير متوفر'}</strong></div>
-                    <div><span>تاريخ الطلب</span><strong>${order.date || 'غير متوفر'}</strong></div>
+                    <div><span>تاريخ الطلب</span><strong>${order.date || (order.created_at ? new Date(order.created_at).toLocaleDateString() : 'غير متوفر')}</strong></div>
                     <div><span>حالة الطلب</span><strong>${order.status || 'غير متوفر'}</strong></div>
                 </div>
                 <div class="order-total-box">

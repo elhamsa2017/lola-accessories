@@ -148,6 +148,7 @@
                 const hasDiscount = Number.isFinite(discountPrice) && discountPrice > 0 && discountPrice < originalPrice;
                 const discountPercent = hasDiscount ? Math.round((1 - (discountPrice / originalPrice)) * 100) : 0;
                 const isSold = Number(product.stock) <= 0 || ['Sold', 'تم البيع'].includes(String(product.status || '').trim());
+                const statusLabels = { 'In Stock': 'متوفر' , 'Low Stock': 'غير متوفر', 'Need Restock': 'يحتاج تجديد', 'Sold': 'تم البيع'};
                 const availabilityLabel = isSold ? 'تم البيع' : 'متوفر';
 
                 return `

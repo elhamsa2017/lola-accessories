@@ -140,9 +140,10 @@
                 <h3>قائمة المنتجات</h3>
                 <div class="filter-pills" aria-label="Product filters">
                     <button type="button" class="pill active" data-filter="all">الكل</button>
-                    <button type="button" class="pill" data-filter="Accessories">الإكسسوارات</button>
-                    <button type="button" class="pill" data-filter="Necklaces">النيكلز</button>
-                    <button type="button" class="pill" data-filter="Bags">الحقائب</button>
+                    <button type="button" class="pill" data-filter="Necklaces">كوليهات</button>
+                    <button type="button" class="pill" data-filter="Bracelets">اساور</button>
+                    <button type="button" class="pill" data-filter="Rings">خواتم</button>
+                    <button type="button" class="pill" data-filter="Earings">حلقان</button>
                 </div>
             </div>
 
@@ -197,7 +198,7 @@
         function updateStats() {
             const totalProducts = products.length;
             const lowStockCount = products.filter(product => Number(product.stock) <= 10).length;
-            const featuredCount = products.filter(product => product.category === 'Accessories').length;
+            const featuredCount = products.filter(product => product.category === 'Necklaces').length;
             const inventoryValue = products.reduce((total, product) => total + (Number(product.price) * Number(product.stock)), 0);
 
             document.getElementById('totalProductsStat').textContent = totalProducts;

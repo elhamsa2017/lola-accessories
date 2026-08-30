@@ -136,7 +136,7 @@
                 </tr>
             `).join('');
 
-            const categories = ['Accessories', 'Necklaces', 'Bags', 'Jewelry'];
+            const categories = ['Necklaces', 'Bracelets', 'Rings', 'Earings'];
             const summaryList = document.getElementById('inventorySummaryList');
             summaryList.innerHTML = categories.map(category => {
                 const count = products.filter(item => item.category === category).length;

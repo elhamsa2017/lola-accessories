@@ -78,10 +78,10 @@
                     <label>
                         الفئة
                         <select id="productCategory" required>
-                            <option value="Accessories">كوليهات</option>
-                            <option value="Necklaces">اساور</option>
-                            <option value="Bags">خواتم</option>
-                            <option value="Jewelry">حلقان</option>
+                            <option value="Necklaces">كوليهات</option>
+                            <option value="Bracelets">اساور</option>
+                            <option value="Rings">خواتم</option>
+                            <option value="Earings">حلقان</option>
                         </select>
                     </label>
                     <label>
@@ -129,6 +129,8 @@
                 <div class="form-actions">
                     <button type="submit" class="normal admin-btn">حفظ المنتج</button>
                     <button type="button" id="cancelEditBtn" class="secondary-btn">إلغاء</button>
+                    <button type="button" id="migrateImagesBtn" class="secondary-btn">تحويل صور المنتجات الي storage</button>
+
                 </div>
             </form>
         </section>
@@ -403,6 +405,211 @@
         });
     </script>
 
+<script>
+document.getElementById('migrateImagesBtn')?.addEventListener('click', async function () {
+
+    const btn = this;
+
+    if (!confirm('سيتم تحويل صور المنتجات إلى Supabase Storage. هل تريدين المتابعة؟')) {
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ جاري تحويل الصور...';
+
+    try {
+
+        // 1) جلب المنتجات
+        const { data: products, error: fetchError } = await supabaseClient
+            .from('products')
+            .select('id, imageUrl');
+
+        if (fetchError) {
+            throw fetchError;
+        }
+
+        if (!products || products.length === 0) {
+            throw new Error('لم يتم العثور على منتجات.');
+        }
+
+        let success = 0;
+        let failed = 0;
+        let report = '';
+
+        // 2) معالجة كل منتج
+        for (const product of products) {
+
+            try {
+
+                if (!product.imageUrl) {
+                    failed++;
+                    report += '❌ ${product.id}: لا توجد صورة\n';
+                    continue;
+                }
+
+                // نتأكد أن الصورة Base64
+                if (!product.imageUrl.startsWith('data:image/')) {
+                    failed++;
+                    report += '⚠️ ${product.id}: الصورة ليست Base64\n';
+                    continue;
+                }
+
+                // استخراج نوع الصورة والبيانات
+                const parts = product.imageUrl.split(',');
+
+                if (parts.length !== 2) {
+                    throw new Error('صيغة Base64 غير صحيحة');
+                }
+
+                const mimeMatch = parts[0].match(/data:(.*?);base64/);
+
+                if (!mimeMatch) {
+                    throw new Error('نوع الصورة غير معروف');
+                }
+
+                const mimeType = mimeMatch[1];
+
+                const base64Data = parts[1];
+
+                // تحويل Base64 إلى Blob
+                const byteCharacters = atob(base64Data);
+
+                const byteArrays = [];
+
+                for (
+                    let offset = 0;
+                    offset < byteCharacters.length;
+                    offset += 1024
+                ) {
+
+                    const slice = byteCharacters.slice(
+                        offset,
+                        offset + 1024
+                    );
+
+                    const byteNumbers = new Array(slice.length);
+
+                    for (let i = 0; i < slice.length; i++) {
+                        byteNumbers[i] = slice.charCodeAt(i);
+                    }
+
+                    byteArrays.push(new Uint8Array(byteNumbers));
+                }
+
+                const blob = new Blob(
+                    byteArrays,
+                    { type: mimeType }
+                );
+
+                // اسم الصورة = ID المنتج
+                let extension = 'jpg';
+
+                if (mimeType === 'image/png') {
+                    extension = 'png';
+                } else if (mimeType === 'image/webp') {
+                    extension = 'webp';
+                } else if (mimeType === 'image/jpeg') {
+                    extension = 'jpg';
+                }
+
+                const fileName =' ${product.id}.$png';
+
+                // 3) رفع الصورة إلى Storage
+                const { error: uploadError } =
+                    await supabaseClient.storage
+                        .from('PRODUCT-IMAGE')
+                        .upload(
+                            fileName,
+                            blob,
+                            {
+                                contentType: mimeType,
+                                upsert: true
+                            }
+                        );
+
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                // 4) إنشاء الرابط العام
+                const { data: publicUrlData } =
+                    supabaseClient.storage
+                        .from('PRODUCT-IMAGE')
+                        .getPublicUrl(fileName);
+
+                const publicUrl =
+                    publicUrlData.publicUrl;
+                    // 5) تحديث imageUrl فقط
+                const { error: updateError } =
+                    await supabaseClient
+                        .from('products')
+                        .update({
+                            imageUrl: publicUrl
+                        })
+                        .eq('id', product.id);
+
+                if (updateError) {
+                    throw updateError;
+                }
+
+                success++;
+
+                report +=
+                   ' ✅ ${product.id} → ${fileName}\n';
+
+                btn.textContent =
+                    '⏳ ${success} / ${products.length}';
+
+            } catch (productError) {
+
+                failed++;
+
+                console.error(
+                   ' Error with product ${product.id}:',
+                    productError
+                );
+
+                report +=
+                    '❌ ${product.id}: ${productError.message || JSON.stringify(productError)}\n';
+            }
+        }
+
+        // 6) النتيجة
+        console.log('IMAGE MIGRATION REPORT');
+        console.log(report);
+
+        alert(
+           ' انتهى تحويل الصور.\n\n '+
+           ' نجح: ${success}\n '+
+           ' فشل: ${failed}\n\n '+
+           ' التفاصيل موجودة في Console'
+           
+);
+
+        console.log(report);
+
+        btn.textContent =
+           '✅ انتهى: ${success} / ${products.length}';
+
+    } catch (error) {
+
+        console.error('MIGRATION ERROR:', error);
+
+        alert(
+            'حدث خطأ:\n\n' +
+            (error.message || JSON.stringify(error))
+        );
+
+        btn.textContent =
+            '🚀 تحويل صور المنتجات إلى Storage';
+
+    } finally {
+
+        btn.disabled = false;
+    }
+    });
+
+  </script>
 
 </body>
 

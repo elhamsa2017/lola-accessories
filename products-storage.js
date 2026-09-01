@@ -19,8 +19,8 @@
             if (orderA !== orderB) {
                 return orderA - orderB;
             }
-            // ثانيا: ترتيب ابجدي حسب الاسم
-            return (a.name || '').localeCompare(b.name || '', 'ar');
+            // ثانيا: ترتيب ابجدي حسب الاسم من الكبير للصغير
+            return (b.name || '').localeCompare(a.name || '', 'ar');
         });
     }
 

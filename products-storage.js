@@ -3,7 +3,7 @@
         const { data, error } = await supabaseClient
             .from('products')
             .select('id, name, category, price, discount_enabled, discount_price, stock, status, description, imageUrl')
-            .order('name', { ascending: true });
+            .order('name', { descending: true });
 
         if (error) {
             console.error('Supabase getProducts error:', error);

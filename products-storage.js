@@ -7,17 +7,20 @@
             console.error('supabase getproducts error:')
                throw error;        
         }
-        const categoryOrder= ['Necklaces', 'Bracelets', 'Rings', 'Earings'];
+        const categoryOrder = ['Necklaces', 'Bracelets', 'Rings', 'Earings'];
 
         return (data || []).sort((a, b) => {
-            // اولا:ترتيب حسب التصنيف
-            const categoryA = categoryOrder[a.category] || 999;
-            const categoryB = categoryOrder[b.category] || 999;
-            if (categoryA !== categoryB) {
-                return categoryA - categoryB;
+            // اولا: ترتيب حسب التصنيف
+            const categoryIndexA = categoryOrder.indexOf(a.category);
+            const categoryIndexB = categoryOrder.indexOf(b.category);
+            const orderA = categoryIndexA !== -1 ? categoryIndexA : 999;
+            const orderB = categoryIndexB !== -1 ? categoryIndexB : 999;
+            
+            if (orderA !== orderB) {
+                return orderA - orderB;
             }
-            // ثانيا:ترتيب ابجدي حسب الاسم
-            return (a.name || '').localeCompare(b.name || '' , 'ar');
+            // ثانيا: ترتيب ابجدي حسب الاسم
+            return (a.name || '').localeCompare(b.name || '', 'ar');
         });
     }
 

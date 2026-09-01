@@ -3,14 +3,22 @@
         const { data, error } = await supabaseClient
             .from('products')
             .select('id, name, category, price, discount_enabled, discount_price, stock, status, description, imageUrl')
-            .order('id', { ascending: false });
-
         if (error) {
-            console.error('Supabase getProducts error:', error);
-            throw error;
+            console.error('supabase getproducts error:')
+               throw error;        
         }
+        const categoryOrder= ['Necklaces', 'Bracelets', 'Rings', 'Earings'];
 
-        return data || [];
+        return (data || []).sort((a, b) => {
+            // اولا:ترتيب حسب التصنيف
+            const categoryA = categoryOrder[a.category] || 999;
+            const categoryB = categoryOrder[b.category] || 999;
+            if (categoryA !== categoryB) {
+                return categoryA - categoryB;
+            }
+            // ثانيا:ترتيب ابجدي حسب الاسم
+            return (a.name || '').localeCompare(b.name || '' , 'ar');
+        });
     }
 
     async function saveProducts(products) {

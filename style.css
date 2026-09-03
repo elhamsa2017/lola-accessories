@@ -44,7 +44,13 @@ body > * {
     position: sticky;
     top: 0;
     left: 0;
-    height: 0%;
+    height: auto;
+    pointer-events: none;
+}
+
+#header > a,
+#header #navbar {
+    pointer-events: auto;
 }
 
 #header > a {
@@ -1858,10 +1864,7 @@ footer .follow .icons i{
 }
 
 .home-page .brand-story {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 34px 28px 24px;
-    text-align: center;
+    display: none;
 }
 
 .home-page .brand-story p {
